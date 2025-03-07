@@ -2,7 +2,7 @@
 Personal experiment to explore the overlap / synergy between NodeGraphQt and PyQtGraph.
 
 # Sources and Achnolegements:
-I considered forking the project/code from OdenGraphQt but was very concerned that using his project as a playground would be more disruptive than useful so I started a new repository and will look to contributing what tests out back into his codeset on a case by case basis.
+I considered forking the project/code from QtGraphology but was very concerned that using his project as a playground would be more disruptive than useful so I started a new repository and will look to contributing what tests out back into his codeset on a case by case basis.
 
 Full disclosure I've done production coding on C/C++, C#, Java, JavaScript and TypeScript over the decades but never Python.  My all-time favorite became TypeScript because of its combination of sophisticed ability to define complex data models and rich capabilities to compose classes and mixins for robust solutions.  It didn't start out that way but I felt it utimately punched above its weight.
 

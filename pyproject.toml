@@ -1,0 +1,46 @@
+[project]
+name = "QtGraphology"
+description = "Node graph framework for PySide6/PyQt6 that can be implemented and re-purposed into applications."
+readme = "README.md"
+requires-python = ">=3.12"
+license = {file = "LICENSE.md"}
+keywords = [
+    "python",
+    "library",
+    "qt",
+    "widgets",
+    "development",
+]
+authors = [
+    {name = "Richard Esmond"},
+]
+maintainers = [
+    {name = "Richard Esmond"}
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Operating System :: Partially OS Independent",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+]
+dynamic = [
+    "version",
+    "dependencies",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/resmond/QtGraphology"
+"Bug Reports" = "https://github.com/resmond/QtGraphology/issues"
+"Source" = "https://github.com/resmond/QtGraphology"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "QtGraphology.pkg_info.__version__"}
+dependencies = {file = "requirements.txt"}
+
+[tool.setuptools.packages.find]
+include = ["QtGraphology*"]
+namespaces = false
