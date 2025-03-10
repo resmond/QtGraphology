@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Never, Self
+
+from QtGraphology.base.node import NodeObject
+from QtGraphology.base.graph import NodeGraph
+from QtGraphology.qgraphics.port import PortItem
 
 if TYPE_CHECKING:
     from QtGraphology import NodeObject
@@ -38,26 +42,25 @@ class Port(object):
         port_item (PortItem): graphic item used for drawing.
     """
 
-    def __init__(self, node, port_item):
-        self.__port_item_view = port_item
-        self.__model = PortModel(node)
-        self.__node = node
+    def __init__(self: Self, node: NodeObject, port_item: PortItem) -> None:
+        self.__port_item_view: PortItem = port_item
+        self.__model = PortModel(node=node)
+        self.__node: NodeObject = node
 
-    def __repr__(self):
-        port = str(self.__class__.__name__)
-        return '<{}("{}") object at {}>'.format(
-            port, self.name(), hex(id(self)))
+    def __repr__(self: Self) -> str:
+        port = str(object=self.__class__.__name__)
+        return f'<{port}("{self.name()}") object at {hex(id(self))}>'
 
     @property
-    def port_item(self) -> PortItem:
+    def port_item(self: Self) -> PortItem:
         return self.__port_item_view
 
     @property
-    def port_node(self) -> NodeObject:
+    def port_node(self: Self) -> NodeObject:
         return self.__node
 
     @property
-    def view(self):
+    def view(self: Self) -> PortItem:
         """
         Returns the :class:`QtWidgets.QGraphicsItem` used in the scene.
 
@@ -67,8 +70,10 @@ class Port(object):
         return self.__port_item_view
 
     @property
-    def model(self):
+    def model(self: Self) -> PortModel:
         """
+        Returns the port model.
+
         Returns the port model.
 
         Returns:
@@ -76,7 +81,7 @@ class Port(object):
         """
         return self.__model
 
-    def type_(self):
+    def type_(self: Self) -> str:
         """
         Returns the port type.
 
@@ -87,9 +92,9 @@ class Port(object):
         Returns:
             str: port connection type.
         """
-        return self.model.type_
+        return self.__model.type
 
-    def multi_connection(self):
+    def multi_connection(self: Self) -> bool:
         """
         Returns if the ports is a single connection or not.
 
@@ -98,7 +103,7 @@ class Port(object):
         """
         return self.model.multi_connection
 
-    def node(self):
+    def node(self: Self) -> NodeObject | None:
         """
         Return the parent node.
 
@@ -107,7 +112,7 @@ class Port(object):
         """
         return self.model.node
 
-    def name(self):
+    def name(self: Self) -> str:
         """
         Returns the port name.
 
@@ -116,7 +121,7 @@ class Port(object):
         """
         return self.model.name
 
-    def visible(self):
+    def visible(self: Self) -> bool:
         """
         Port visible in the node graph.
 
@@ -125,9 +130,9 @@ class Port(object):
         """
         return self.model.visible
 
-    def set_visible(self, visible=True, push_undo=True):
+    def set_visible(self: Self, visible: bool=True, push_undo:bool=True) -> None:
         """
-        Sets weather the port should be visible or not.
+        Sets whether the port should be visible or not.
 
         Args:
             visible (bool): true if visible.
@@ -138,14 +143,16 @@ class Port(object):
         if visible == self.visible():
             return
 
-        undo_cmd = PortVisibleCmd(self, visible)
+        undo_cmd = PortVisibleCmd(port=self, visible=visible)
         if push_undo:
-            undo_stack = self.node().graph.undo_stack()
-            undo_stack.push(undo_cmd)
+            _graph_node: NodeObject | None = self.node()
+            if _graph_node and _graph_node.graph:
+                undo_stack: Any = _graph_node.graph.undo_stack()
+                undo_stack.push(undo_cmd)
         else:
             undo_cmd.redo()
 
-    def locked(self):
+    def locked(self: Self) -> bool:
         """
         Returns the locked state.
 
@@ -157,7 +164,7 @@ class Port(object):
         """
         return self.model.locked
 
-    def lock(self):
+    def lock(self: Self) -> None:
         """
         Lock the port so new pipe connections can't be connected and
         current connected pipes can't be disconnected.
@@ -165,19 +172,22 @@ class Port(object):
         This is the same as calling :meth:`Port.set_locked` with the arg
         set to ``True``
         """
-        self.set_locked(True, connected_ports=True)
+        self.set_locked(state=True, connected_ports=True)
 
-    def unlock(self):
+    def unlock(self: Self) -> None:
         """
+        Unlock the port so new pipe connections can be connected and
+        existing connected pipes can be disconnected.
+
         Unlock the port so new pipe connections can be connected and
         existing connected pipes can be disconnected.
 
         This is the same as calling :meth:`Port.set_locked` with the arg
         set to ``False``
         """
-        self.set_locked(False, connected_ports=True)
+        self.set_locked(state=False, connected_ports=True)
 
-    def set_locked(self, state=False, connected_ports=True, push_undo=True):
+    def set_locked(self: Self, state: bool = False, connected_ports: bool = True, push_undo: bool = True) -> None:
         """
         Sets the port locked state. When locked pipe connections can't be
         connected or disconnected from this port.
@@ -195,9 +205,9 @@ class Port(object):
         graph = self.node().graph
         undo_stack = graph.undo_stack()
         if state:
-            undo_cmd = PortLockedCmd(self)
+            undo_cmd = PortLockedCmd(port=self)
         else:
-            undo_cmd = PortUnlockedCmd(self)
+            undo_cmd = PortUnlockedCmd(port=self)
         if push_undo:
             undo_stack.push(undo_cmd)
         else:
@@ -208,7 +218,7 @@ class Port(object):
                                 connected_ports=False,
                                 push_undo=push_undo)
 
-    def connected_ports(self):
+    def connected_ports(self: Self) -> list[Port]:
         """
         Returns all connected ports.
 
@@ -226,7 +236,7 @@ class Port(object):
                     ports.append(node.inputs()[port_name])
         return ports
 
-    def connect_to(self, target_port=None, push_undo=True, emit_signal=True):
+    def connect_to(self: Self, target_port=None, push_undo=True, emit_signal=True) -> None:
         """
         Create connection to the specified port and emits the
         :attr:`NodeGraph.port_connected` signal from the parent node graph.
@@ -239,12 +249,12 @@ class Port(object):
         if not target_port:
             return
 
-        is_valid_accept_constraint = target_port.port_item.validate_accept_constraint(self.port_item)
+        is_valid_accept_constraint: bool = target_port.port_item.validate_accept_constraint(self.port_item)
         if not is_valid_accept_constraint and self in target_port.connected_ports():
             return
 
         if self.locked() or target_port.locked():
-            name = [p.name() for p in [self, target_port] if p.locked()][0]
+            name: str | None = [p.name() for p in [self, target_port] if p.locked()][0]
             raise PortError(
                 'Can\'t connect port because "{}" is locked.'.format(name))
 
@@ -293,10 +303,10 @@ class Port(object):
             if pre_conn_port:
                 if push_undo:
                     undo_stack.push(
-                        PortDisconnectedCmd(self, target_port, emit_signal)
+                        PortDisconnectedCmd(src_port=self, trg_port=target_port, emit_signal=emit_signal)
                     )
                     undo_stack.push(
-                        NodeInputDisconnectedCmd(self, target_port)
+                        NodeInputDisconnectedCmd(src_port=self, trg_port=target_port)
                     )
                     undo_stack.endMacro()
                 else:
