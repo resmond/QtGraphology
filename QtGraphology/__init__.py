@@ -45,6 +45,8 @@ example code:
 from .pkg_info import __version__ as VERSION
 from .pkg_info import __license__ as LICENSE
 
+#from .constants import *
+
 # node graph
 from .base.graph import NodeGraph, SubGraph
 from .base.menu import NodesMenu, NodeGraphMenu, NodeGraphCommand

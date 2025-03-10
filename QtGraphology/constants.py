@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import os
-from typing import Self, Any, Literal
+from typing import Self, Any, Literal, TypeAlias
 
 from PySide6 import QtWidgets
 from enum import Enum
@@ -37,6 +37,12 @@ Z_VAL_NODE_WIDGET = 3
 # QGraphicsItem.DeviceCoordinateCache
 # QGraphicsItem.ItemCoordinateCache
 ITEM_CACHE_MODE = QtWidgets.QGraphicsItem.CacheMode.DeviceCoordinateCache
+
+TCOLOR: TypeAlias =  tuple[int, int, int, int] | tuple[int, int, int]
+TPOSITION: TypeAlias = list[float]
+TSIZE: TypeAlias = tuple[float, float]
+TPROPERTY: TypeAlias = TCOLOR | TPOSITION | TSIZE |Enum | int | str | float | bool | None
+TPROPERTIES: TypeAlias = dict[str, TPROPERTY]
 
 # =================================== GLOBAL ===================================
 
@@ -189,7 +195,6 @@ class PipeSlicerEnum(Enum):
     WIDTH = 1.5
     #: default color.
     COLOR = (255, 50, 75)
-
 
 class PipeLayoutEnum(Enum):
     """

@@ -7,8 +7,10 @@ import re
 
 #import signal
 
-from tkinter import N
+#from tkinter import N
 from typing import Self, Any
+
+from QtGraphology.widgets.actions import BaseMenu
 
 os.environ['QT_API'] = 'pyside6'
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -118,13 +120,6 @@ class NodeGraph(QtCore.QObject):
     :parameters: :class:`QtGraphology.Port`, :class:`QtGraphology.Port`
     :emits: input port, output port
     """
-    port_connected: QtCore.Signal = QtCore.Signal(Port, Port)
-    """
-    Signal triggered when a node port has been disconnected.
-
-    :parameters: :class:`QtGraphology.Port`, :class:`QtGraphology.Port`
-    :emits: input port, output port
-    """
     port_disconnected: QtCore.Signal = QtCore.Signal(Port, Port)
     """
     Signal triggered when a node port has been disconnected.
@@ -146,7 +141,7 @@ class NodeGraph(QtCore.QObject):
     :parameters: :class:`PySide6.QtCore.QMimeData`, :class:`PySide6.QtCore.QPoint`
     :emits: mime data, node graph position
     """
-    session_changed = QtCore.Signal(str)
+    session_changed: QtCore.Signal = QtCore.Signal(str)
     """
     Signal is triggered when session has been changed.
 
@@ -163,7 +158,7 @@ class NodeGraph(QtCore.QObject):
     :emits: triggered context menu, node object.
     """
 
-    def __init__(self: Self, parent=None, **kwargs) -> None:
+    def __init__(self: Self, parent=None, **kwargs: dict[str, Any]) -> None:
         """
         Args:
             parent (object): object parent.
@@ -171,62 +166,70 @@ class NodeGraph(QtCore.QObject):
         """
         super(NodeGraph, self).__init__(parent=parent)
         self.setObjectName('NodeGraph')
-        self._model: NodeGraphModel = (
-            kwargs.get('model') or NodeGraphModel()
-        )
-        self._widget = None
-        self._sub_graphs: dict = {}
-        self._viewer = (
-            kwargs.get('viewer') or NodeViewer(undo_stack=self._undo_stack)
-        )
-        self._undo_view = None
-        self._undo_stack: QtGui.QUndoStack | None = (
-            kwargs.get('undo_stack') or QtGui.QUndoStack(parent=self)
-        )
-        self._widget = None
-        self._sub_graphs: dict = {}
-        self._viewer: NodeViewer | None = (
-            kwargs.get('viewer') or NodeViewer(undo_stack=self._undo_stack)
-        )
 
-        self._model.foo: str = "";
-        #.layout_direction: LayoutDirectionEnum = LayoutDirectionEnum.HORIZONTAL.value;
+        if kwargs:
 
+            model_: NodeGraphModel | Any = kwargs.get('model')
+            if isinstance(model_, NodeGraphModel):
+                self._model: NodeGraphModel = model_
+            else:
+                self._model: NodeGraphModel = NodeGraphModel()
 
+            undo_stack_: QtGui.QUndoStack | Any = kwargs.get('undo_stack')
+            if isinstance(undo_stack_, QtGui.QUndoStack):
+                self._undo_stack: QtGui.QUndoStack = undo_stack_
+            else:
+                self._undo_stack: QtGui.QUndoStack = QtGui.QUndoStack(parent=self)
 
-        | None = kwargs.get('layout_direction')
-        #layout_direction =
-        if layout_direction:
-            if layout_direction not in [e.value for e in LayoutDirectionEnum]:
-                layout_direction  = LayoutDirectionEnum.HORIZONTAL.value
-            self._model.layout_direction = layout_direction
+            viewer_: NodeViewer | Any = kwargs.get('viewer')
+            if isinstance(viewer_, NodeViewer):
+                self._viewer: NodeViewer = viewer_
+            else:
+                self._viewer: NodeViewer = NodeViewer(undo_stack=self._undo_stack)
+
+            node_factory_: NodeFactory | Any = kwargs.get('node_factory')
+            if isinstance(node_factory_, NodeFactory):
+                self._node_factory: NodeFactory = node_factory_
+            else:
+                self._node_factory: NodeFactory = NodeFactory()
+
+            layout_direction_ : LayoutDirectionEnum | Any = kwargs.get('layout_direction')
+            if isinstance(layout_direction_, LayoutDirectionEnum):
+                self._model.layout_direction = layout_direction_
+            else:
+                self._model.layout_direction = LayoutDirectionEnum.VERTICAL
+
+            pipe_style_: PipeLayoutEnum | Any = kwargs.get('pipe_style')
+            if isinstance(pipe_style_, PipeLayoutEnum):
+                self._model.pipe_style = pipe_style_
+            else:
+                self._model.pipe_style = PipeLayoutEnum.CURVED
         else:
-            layout_direction = self._model.layout_direction
-        self._viewer.set_layout_direction(layout_direction)
+            self._model = NodeGraphModel()
+            self._undo_stack = QtGui.QUndoStack(parent=self)
+            self._viewer = NodeViewer(undo_stack=self._undo_stack)
+            self._node_factory = NodeFactory()
+            self._model.layout_direction = LayoutDirectionEnum.VERTICAL
+            self._model.pipe_style = PipeLayoutEnum.CURVED
 
-        pipe_style = kwargs.get('pipe_style')
-        if pipe_style is not None:
-            if pipe_style not in [e.value for e in PipeLayoutEnum]:
-                pipe_style = PipeLayoutEnum.CURVED.value
-            self._model.pipe_style = pipe_style
-        else:
-            pipe_style = self._model.pipe_style
-        self._viewer.set_pipe_layout(pipe_style)
+        self._viewer.set_layout_direction(direction=self._model.layout_direction)
+        self._viewer.set_pipe_layout(self._model.pipe_style)
 
         # viewer needs a reference to the model port connection constrains
         # for the user interaction with the live pipe.
         self._viewer.accept_connection_types = self._model.accept_connection_types
         self._viewer.reject_connection_types = self._model.reject_connection_types
 
-        self._context_menu = {}
-
+        self._widget = None
+        self._sub_graphs: dict = {}
+        self._undo_view = None
+        self._context_menu: dict[Any, Any] = {}
         self._register_context_menu()
         self._register_builtin_nodes()
         self._wire_signals()
 
-    def __repr__(self):
-        return '<{}("root") object at {}>'.format(
-            self.__class__.__name__, hex(id(self)))
+    def __repr__(self: Self)-> str:
+        return f'<{self.__class__.__name__}("root") object at {hex(id(self))}>'
 
     def _register_context_menu(self):
         """
@@ -234,7 +237,7 @@ class NodeGraph(QtCore.QObject):
         """
         if not self._viewer:
             return
-        menus = self._viewer.context_menus()
+        menus: dict[str, BaseMenu] = self._viewer.context_menus()
         if menus.get('graph'):
             self._context_menu['graph'] = NodeGraphMenu(self, menus['graph'])
         if menus.get('nodes'):
@@ -246,7 +249,7 @@ class NodeGraph(QtCore.QObject):
         """
         self.register_node(BackdropNode, alias='Backdrop')
 
-    def _wire_signals(self):
+    def _wire_signals(self: Self) -> None:
         """
         Connect up all the signals and slots here.
         """
@@ -269,7 +272,7 @@ class NodeGraph(QtCore.QObject):
         self._viewer.data_dropped.connect(self._on_node_data_dropped)
         self._viewer.context_menu_prompt.connect(self._on_context_menu_prompt)
 
-    def _on_context_menu_prompt(self, menu_name, node_id):
+    def _on_context_menu_prompt(self: Self, menu_name: str, node_id: str) -> None:
         """
         Slot function triggered just before a context menu is shown.
 
@@ -277,11 +280,11 @@ class NodeGraph(QtCore.QObject):
             menu_name (str): context menu name.
             node_id (str): node id if triggered from the nodes context menu.
         """
-        node = self.get_node_by_id(node_id)
-        menu = self.get_context_menu(menu_name)
+        node: BaseNode | None = self.get_node_by_id(node_id=node_id)
+        menu: BaseMenu | None = self.get_context_menu(menu=menu_name)
         self.context_menu_prompt.emit(menu, node)
 
-    def _on_insert_node(self, pipe, node_id, prev_node_pos):
+    def _on_insert_node(self: Self, pipe: BaseNode, node_id: str, prev_node_pos: dict) -> None:
         """
         Slot function triggered when a selected node has collided with a pipe.
 
@@ -290,7 +293,7 @@ class NodeGraph(QtCore.QObject):
             node_id (str): selected node id to insert.
             prev_node_pos (dict): previous node position. {NodeItem: [prev_x, prev_y]}
         """
-        node = self.get_node_by_id(node_id)
+        node: BaseNode | None = self.get_node_by_id(node_id=node_id)
 
         # exclude if not a BaseNode
         if not isinstance(node, BaseNode):
@@ -842,6 +845,9 @@ class NodeGraph(QtCore.QObject):
             mod_name = '{}.{}'.format(base_name, file_name)
 
             spec = importlib.util.spec_from_file_location(mod_name, full_path)
+            if spec is None:
+                print(f"Warning: Could not load module from {full_path}")
+                return
             mod = importlib.util.module_from_spec(spec)
             sys.modules[mod_name] = mod
             spec.loader.exec_module(mod)
@@ -1238,7 +1244,7 @@ class NodeGraph(QtCore.QObject):
         Returns:
             BaseNode: the created instance of the node.
         """
-        node = self._node_factory.create_node_instance(node_type)
+        node: NodeObject = self._node_factory.create_node_instance(node_type)
         if node:
             node._graph = self
             node.model._graph_model = self.model
@@ -2552,7 +2558,7 @@ class SubGraph(NodeGraph):
     -
     """
 
-    def __init__(self, parent=None, node=None, node_factory=None, **kwargs):
+    def __init__(self, parent=None, node=None, node_factory=None, **kwargs: dict[str, Any]):
         """
         Args:
             parent (object): object parent.
@@ -2696,9 +2702,9 @@ class SubGraph(NodeGraph):
         # update node graph properties.
         for attr_name, attr_value in data.get('graph', {}).items():
             if attr_name == 'acyclic':
-                self.set_acyclic(attr_value)
+                self.set_acyclic(mode=attr_value)
             elif attr_name == 'pipe_collision':
-                self.set_pipe_collision(attr_value)
+                self.set_pipe_collision(mode=attr_value)
 
         # build the port input & output nodes here.
         input_nodes, output_nodes = self._build_port_nodes()

@@ -1,9 +1,10 @@
 #!/usr/bin/python
+from typing import NoReturn, Self, Any
+
 from QtGraphology.errors import PortRegistrationError
 from QtGraphology.nodes.base_node import BaseNode
 from QtGraphology.qgraphics.node_port_in import PortInputNodeItem
 from QtGraphology.qgraphics.node_port_out import PortOutputNodeItem
-
 
 class PortInputNode(BaseNode):
     """
@@ -22,12 +23,12 @@ class PortInputNode(BaseNode):
 
     NODE_NAME = 'InputPort'
 
-    def __init__(self, qgraphics_item=None, parent_port=None):
-        super(PortInputNode, self).__init__(qgraphics_item or PortInputNodeItem)
-        self._parent_port = parent_port
+    def __init__(self: Self, qgraphics_item: PortInputNodeItem | None = None, parent_port: PortInputNodeItem | None=None) -> None:
+        super(PortInputNode, self).__init__(qgraphics_item=qgraphics_item or PortInputNodeItem)
+        self._parent_port: PortInputNodeItem | None = parent_port
 
     @property
-    def parent_port(self):
+    def parent_port(self: Self) -> PortInputNodeItem | None:
         """
         The parent group node port representing this node.
 
@@ -36,16 +37,14 @@ class PortInputNode(BaseNode):
         """
         return self._parent_port
 
-    def add_input(self, name='input', multi_input=False, display_name=True,
-                  color=None, locked=False, painter_func=None):
+    def add_input(self: Self, name: str='input', multi_input: bool=False, display_name: bool=True,
+                  color: Any=None, locked: bool=False, painter_func: Any=None) -> NoReturn:
         """
         Warnings:
             This is not available for the ``PortInputNode`` class.
         """
-        raise PortRegistrationError(
-            '"{}.add_input()" is not available for {}.'
-            .format(self.__class__.__name__, self)
-        )
+        raise PortRegistrationError(f'"{self.__class__.__name__}.add_input()" is not available for {self}.')
+
 
     def add_output(self, name='output', multi_output=True, display_name=True,
                    color=None, locked=False, painter_func=None):
@@ -55,10 +54,8 @@ class PortInputNode(BaseNode):
             and is not available for the ``PortInputNode`` class.
         """
         if self._outputs:
-            raise PortRegistrationError(
-                '"{}.add_output()" only ONE output is allowed for this node.'
-                .format(self.__class__.__name__, self)
-            )
+            raise PortRegistrationError(f'"{self.__class__.__name__}.add_output()" only ONE output is allowed for this node.')
+
         super(PortInputNode, self).add_output(
             name=name,
             multi_output=multi_output,

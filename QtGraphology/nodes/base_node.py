@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from typing import Any, Self
 
 from QtGraphology.base.commands import NodeVisibleCmd, NodeWidgetVisibleCmd
 from QtGraphology.base.node import NodeObject
@@ -58,16 +59,16 @@ class BaseNode(NodeObject):
 
     NODE_NAME = 'Node'
 
-    def __init__(self, qgraphics_item=None):
-        super().__init__(qgraphics_item or NodeItem)
-        self._inputs = []
+    def __init__(self: Self, qgraphics_item: NodeItem | None=None) -> None:
+        super().__init__(qgraphics_item=qgraphics_item or NodeItem)
+        self._inputs: list[PortInputNode] = []
         self._outputs = []
 
-    def update_model(self):
+    def update_model(self) -> None:
         """
         Update the node model from view.
         """
-        reserved_names = [
+        reserved_names: list[str] = [
             "inputs",
             "outputs",
             "identifier",
@@ -179,7 +180,7 @@ class BaseNode(NodeObject):
         """
         return self.view.widgets.get(name)
 
-    def add_custom_widget(self, widget, widget_type=None, tab=None, **kwargs):
+    def add_custom_widget(self, widget, widget_type=None, tab=None, **kwargs: dict[str, Any]):
         """
         Add a custom node widget into the node.
 
@@ -361,8 +362,8 @@ class BaseNode(NodeObject):
         else:
             undo_cmd.redo()
 
-    def add_input(self, name='input', multi_input=False, display_name=True,
-                  color=None, locked=False, painter_func=None):
+    def add_input(self, name='input', multi_input: bool=False, display_name=True,
+                  color=None, locked=False, painter_func=None) -> Port:
         """
         Add input :class:`Port` to node.
 
@@ -395,8 +396,8 @@ class BaseNode(NodeObject):
             port_item.color = color
             port_item.border_color = [min([255, max([0, i + 80])]) for i in color]
 
-        port = Port(self, port_item)
-        port.model.type_ = PortTypeEnum.IN.value
+        port = Port(node=self, port_item=port_item)
+        port.model.type_ = PortTypeEnum.IN
         port.model.name = name
         port.model.display_name = display_name
         port.model.multi_connection = multi_input

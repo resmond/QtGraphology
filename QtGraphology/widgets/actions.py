@@ -1,12 +1,14 @@
 #!/usr/bin/python
-from PySide6 import QtCore, QtWidgets
+from typing import Self, Any
+from PySide6 import QtCore, QtWidgets, QtGui
+
 
 from QtGraphology.constants import ViewerEnum
 
 
 class BaseMenu(QtWidgets.QMenu):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self: Self, *args, **kwargs: dict[str, Any]) -> None:
         super(BaseMenu, self).__init__(*args, **kwargs)
         # text_color = self.palette().text().color().getRgb()
         text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
@@ -59,9 +61,9 @@ class BaseMenu(QtWidgets.QMenu):
     #         if hasattr(a, 'node_id'):
     #             a.node_id = None
 
-    def get_menu(self, name, node_id=None):
+    def get_menu(self: Self, name: str, node_id=None) -> QtCore.QObject | None:
         for action in self.actions():
-            menu = action.menu()
+            menu: QtCore.QObject = action.menu()
             if not menu:
                 continue
             if menu.title() == name:
@@ -81,19 +83,19 @@ class BaseMenu(QtWidgets.QMenu):
         return menus
 
 
-class GraphAction(QtWidgets.QAction):
+class GraphAction(QtGui.QAction):
 
     executed = QtCore.Signal(object)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self: Self, *args, **kwargs: dict[str, Any]) -> None:
         super(GraphAction, self).__init__(*args, **kwargs)
         self.graph = None
         self.triggered.connect(self._on_triggered)
 
-    def _on_triggered(self):
+    def _on_triggered(self: Self):
         self.executed.emit(self.graph)
 
-    def get_action(self, name):
+    def get_action(self: Self, name: str):
         for action in self.qmenu.actions():
             if not action.menu() and action.text() == name:
                 return action
@@ -103,10 +105,10 @@ class NodeAction(GraphAction):
 
     executed = QtCore.Signal(object, object)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self: Self, *args, **kwargs: dict[str, Any]) -> None:
         super(NodeAction, self).__init__(*args, **kwargs)
         self.node_id = None
 
-    def _on_triggered(self):
+    def _on_triggered(self: Self) -> None:
         node = self.graph.get_node_by_id(self.node_id)
         self.executed.emit(self.graph, node)

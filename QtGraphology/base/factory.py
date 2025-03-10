@@ -1,19 +1,26 @@
 #!/usr/bin/python
-from QtGraphology.errors import NodeRegistrationError
+from typing import TYPE_CHECKING, Self, Any
 
+from QtGraphology.errors import NodeRegistrationError
+from QtGraphology.base.node import NodeObject
+from QtGraphology.constants import TPROPERTY, TPROPERTIES, TCOLOR
+
+type ALIASES = dict[str, str]
+type NAMES = dict[str, str]
+type NODES = dict[str, str]
 
 class NodeFactory(object):
     """
     Node factory that stores all the node types.
     """
 
-    def __init__(self):
-        self.__aliases = {}
-        self.__names = {}
-        self.__nodes = {}
+    def __init__(self) -> None:
+        self.__aliases: ALIASES = {}
+        self.__names: NAMES = {}
+        self.__nodes: NODES = {}
 
     @property
-    def names(self):
+    def names(self: Self) -> NODES:
         """
         Return all currently registered node type identifiers.
 
@@ -23,7 +30,7 @@ class NodeFactory(object):
         return self.__names
 
     @property
-    def aliases(self):
+    def aliases(self: Self) -> ALIASES:
         """
         Return aliases assigned to the node types.
 
@@ -33,7 +40,7 @@ class NodeFactory(object):
         return self.__aliases
 
     @property
-    def nodes(self):
+    def nodes(self: Self) -> NODES:
         """
         Return all registered nodes.
 
@@ -42,7 +49,7 @@ class NodeFactory(object):
         """
         return self.__nodes
 
-    def create_node_instance(self, node_type=None):
+    def create_node_instance(self: Self, node_type: str='') -> NodeObject:
         """
         create node object by the node type identifier or alias.
 
@@ -55,9 +62,10 @@ class NodeFactory(object):
         if node_type in self.aliases:
             node_type = self.aliases[node_type]
 
-        _NodeClass = self.__nodes.get(node_type)
+        _NodeClass: str | None = self.__nodes.get(node_type)
+
         if _NodeClass:
-            return _NodeClass()
+            return NodeObject()
 
     def register_node(self, node, alias=None):
         """

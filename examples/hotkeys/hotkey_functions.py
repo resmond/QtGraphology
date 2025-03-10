@@ -3,8 +3,8 @@
 # ------------------------------------------------------------------------------
 # menu command functions
 # ------------------------------------------------------------------------------
-from tkinter import NO
-from QtGraphology import NodeGraph, NodeViewer
+#from tkinter import NO
+from QtGraphology import NodeGraph
 
 
 def zoom_in(graph: NodeGraph) -> None:
@@ -72,7 +72,7 @@ def save_session(graph: NodeGraph) -> None:
     if current:
         graph.save_session(file_path=current)
         msg: str = 'Session layout saved:\n{}'.format(current)
-        viewer: NodeViewer | None = graph.viewer()
+        viewer = graph.viewer()
         viewer.message_dialog(msg, title='Session Saved')
     else:
         save_session_as(graph)

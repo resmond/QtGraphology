@@ -13,12 +13,13 @@ from QtGraphology import (
 )
 
 # import example nodes from the "example_nodes" package
+from QtGraphology.widgets.node_graph import NodeGraphWidget
 from nodes import basic_nodes, custom_ports_node, group_node, widget_nodes
 
 if __name__ == '__main__':
 
     # handle SIGINT to make the app terminate on CTRL+C
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal.signal(signalnum=signal.SIGINT, handler=signal.SIG_DFL)
 
     app = QtWidgets.QApplication([])
 
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     graph = NodeGraph()
 
     # set up context menu for the node graph.
-    graph.set_context_menu_from_file('./examples/hotkeys/hotkeys.json')
+    graph.set_context_menu_from_file(file_path='./examples/hotkeys/hotkeys.json')
 
     # registered example nodes.
     graph.register_nodes([
@@ -41,18 +42,18 @@ if __name__ == '__main__':
     ])
 
     # show the node graph widget.
-    graph_widget = graph.widget
+    graph_widget: NodeGraphWidget = graph.widget
     graph_widget.resize(1100, 800)
     graph_widget.show()
 
     # create node with custom text color and disable it.
     n_basic_a = graph.create_node(
-        'nodes.basic.BasicNodeA', text_color='#feab20')
+        node_type='nodes.basic.BasicNodeA', text_color='#feab20')
     n_basic_a.set_disabled(True)
 
     # create node and set a custom icon.
     n_basic_b = graph.create_node(
-        'nodes.basic.BasicNodeB', name='custom icon')
+        node_type='nodes.basic.BasicNodeB', name='custom icon')
     n_basic_b.set_icon(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), 'star.png')
     )

@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Never, Self
 
+from PySide6.QtGui import QUndoStack
+
 from QtGraphology.base.node import NodeObject
 from QtGraphology.base.graph import NodeGraph
 from QtGraphology.qgraphics.port import PortItem
+from QtGraphology.widgets.viewer import NodeViewer
 
 if TYPE_CHECKING:
     from QtGraphology import NodeObject
@@ -103,7 +106,7 @@ class Port(object):
         """
         return self.model.multi_connection
 
-    def node(self: Self) -> NodeObject | None:
+    def node(self: Self) -> NodeObject:
         """
         Return the parent node.
 
@@ -202,7 +205,7 @@ class Port(object):
         if state == self.locked():
             return
 
-        graph = self.node().graph
+        graph: NodeGraph = self.node().graph
         undo_stack = graph.undo_stack()
         if state:
             undo_cmd = PortLockedCmd(port=self)
@@ -225,8 +228,8 @@ class Port(object):
         Returns:
             list[QtGraphology.Port]: list of connected ports.
         """
-        ports = []
-        graph = self.node().graph
+        ports: list[Port]= []
+        graph: NodeGraph = self.node().graph
         for node_id, port_names in self.model.connected_ports.items():
             for port_name in port_names:
                 node = graph.get_node_by_id(node_id)
@@ -286,13 +289,14 @@ class Port(object):
                 return
 
         # make the connection from here.
-        graph = self.node().graph
-        viewer = graph.viewer()
+        graph: NodeGraph = self.node().graph
+        viewer: NodeViewer = graph.viewer()
 
         # FIXME: undo_stack needs to be declare early or outside or try except blah
         if push_undo:
-            undo_stack = graph.undo_stack()
+            undo_stack: QUndoStack | Unbound = graph.undo_stack()
             undo_stack.beginMacro('connect port')
+            push_undo
 
         pre_conn_port = None
         src_conn_ports = self.connected_ports()
@@ -379,7 +383,7 @@ class Port(object):
             name = [p.name() for p in [self, target_port] if p.locked()][0]
             raise PortError(f"Can't disconnect port because \"{name}\" is locked.")
 
-        graph = self.node().graph
+        graph: NodeGraph = self.node().graph
         if push_undo:
             graph.undo_stack().beginMacro('disconnect port')
             graph.undo_stack().push(PortDisconnectedCmd(self, target_port, emit_signal))
@@ -410,8 +414,8 @@ class Port(object):
             return
 
         if push_undo:
-            graph = self.node().graph
-            undo_stack = graph.undo_stack()
+            graph: NodeGraph = self.node().graph
+            undo_stack: QUndoStack = graph.undo_stack()
             undo_stack.beginMacro('"{}" clear connections')
             for cp in self.connected_ports():
                 self.disconnect_from(cp, emit_signal=emit_signal)

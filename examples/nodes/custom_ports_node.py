@@ -4,7 +4,7 @@ from PySide6 import QtCore, QtGui
 from QtGraphology import BaseNode
 
 
-def draw_triangle_port(painter, rect, info):
+def draw_triangle_port(painter: QtGui.QPainter, rect: QtCore.QRectF, info) -> None:
     """
     Custom paint function for drawing a Triangle shaped port.
 
@@ -57,7 +57,7 @@ def draw_triangle_port(painter, rect, info):
     painter.restore()
 
 
-def draw_square_port(painter, rect, info):
+def draw_square_port(painter: QtGui.QPainter, rect: QtCore.QRectF, info: dict) -> None:
     """
     Custom paint function for drawing a Square shaped port.
 
@@ -106,7 +106,7 @@ class CustomPortsNode(BaseNode):
     """
 
     # set a unique node identifier.
-    __identifier__ = 'nodes.custom.ports'
+    __identifier__: str = 'nodes.custom.ports'
 
     # set the initial default node name.
     NODE_NAME = 'node'
@@ -115,7 +115,7 @@ class CustomPortsNode(BaseNode):
         super(CustomPortsNode, self).__init__()
 
         # create input and output port.
-        self.add_input('in', color=(200, 10, 0))
-        self.add_output('default')
-        self.add_output('square', painter_func=draw_square_port)
-        self.add_output('triangle', painter_func=draw_triangle_port)
+        self.add_input(name='in', color=(200, 10, 0))
+        self.add_output(name='default')
+        self.add_output(name='square', painter_func=draw_square_port)
+        self.add_output(name='triangle', painter_func=draw_triangle_port)

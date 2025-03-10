@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from collections import OrderedDict
+from typing import Optional, Tuple, Any, Callable, Self, Any
 
 from PySide6 import QtGui, QtCore, QtWidgets
 
@@ -10,15 +11,16 @@ from QtGraphology.constants import (
     NodeEnum,
     PortEnum,
     PortTypeEnum,
-    Z_VAL_NODE
+    Z_VAL_NODE,
+    TPOSITION
 )
+
 from QtGraphology.errors import NodeWidgetError
 from QtGraphology.qgraphics.node_abstract import AbstractNodeItem
 from QtGraphology.qgraphics.node_overlay_disabled import XDisabledItem
 from QtGraphology.qgraphics.node_text_item import NodeTextItem
 from QtGraphology.qgraphics.port import PortItem, CustomPortItem
-
-
+from QtGraphology.widgets.viewer import NodeViewer, NodeScene
 class NodeItem(AbstractNodeItem):
     """
     Base Node item.
@@ -28,26 +30,26 @@ class NodeItem(AbstractNodeItem):
         parent (QtWidgets.QGraphicsItem): parent item.
     """
 
-    def __init__(self, name='node', parent=None):
-        super().__init__(name, parent)
+    def __init__(self, name: str = 'node', parent: Optional[QtWidgets.QGraphicsItem] = None) -> None:
+        super().__init__(name=name, parent=parent)
         pixmap = QtGui.QPixmap(ICON_NODE_BASE)
         if pixmap.size().height() > NodeEnum.ICON_SIZE.value:
-            pixmap = pixmap.scaledToHeight(
+            pixmap: QtGui.QPixmap = pixmap.scaledToHeight(
                 NodeEnum.ICON_SIZE.value,
-                QtCore.Qt.TransformationMode.SmoothTransformation
+                mode=QtCore.Qt.TransformationMode.SmoothTransformation
             )
         self._properties['icon'] = ICON_NODE_BASE
-        self._icon_item = QtWidgets.QGraphicsPixmapItem(pixmap, self)
+        self._icon_item = QtWidgets.QGraphicsPixmapItem(pixmap, parent=self)
         self._icon_item.setTransformationMode(QtCore.Qt.TransformationMode.SmoothTransformation)
-        self._text_item = NodeTextItem(self.name, self)
-        self._x_item = XDisabledItem(self, 'DISABLED')
+        self._text_item = NodeTextItem(text=self.name, parent=self)
+        self._x_item = XDisabledItem(parent=self, text='DISABLED')
         self._input_items = OrderedDict()
         self._output_items = OrderedDict()
         self._widgets = OrderedDict()
         self._proxy_mode = False
         self._proxy_mode_threshold = 70
 
-    def post_init(self, viewer=None, pos=None):
+    def _post_init(self, viewer: Optional[NodeViewer] = None, pos: Optional[TPOSITION] = None) -> None:
         """
         Called after node has been added into the scene.
 
@@ -61,13 +63,13 @@ class NodeItem(AbstractNodeItem):
             self.text_item.setFont(font)
 
             # hide port text items for vertical layout.
-            if self.layout_direction is LayoutDirectionEnum.VERTICAL.value:
+            if self.layout_direction is LayoutDirectionEnum.VERTICAL:
                 for text_item in self._input_items.values():
                     text_item.setVisible(False)
                 for text_item in self._output_items.values():
                     text_item.setVisible(False)
 
-    def _paint_horizontal(self, painter, option, widget):
+    def _paint_horizontal(self: Self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem, widget: Optional[QtWidgets.QWidget]) -> None:
         painter.save()
         painter.setPen(QtCore.Qt.PenStyle.NoPen)
         painter.setBrush(QtCore.Qt.BrushStyle.NoBrush)
@@ -125,7 +127,7 @@ class NodeItem(AbstractNodeItem):
 
         painter.restore()
 
-    def _paint_vertical(self, painter, option, widget):
+    def _paint_vertical(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem, widget: Optional[QtWidgets.QWidget]) -> None:
         painter.save()
         painter.setPen(QtCore.Qt.PenStyle.NoPen)
         painter.setBrush(QtCore.Qt.BrushStyle.NoBrush)
@@ -180,14 +182,13 @@ class NodeItem(AbstractNodeItem):
 
         painter.restore()
 
-    def paint(self, painter, option, widget):
+    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem, widget: Optional[QtWidgets.QWidget]) -> None:
         """
         Draws the node base not the ports.
 
         Args:
             painter (QtGui.QPainter): painter used for drawing the item.
-            option (QtGui.QStyleOptionGraphicsItem):
-                used to describe the parameters needed to draw.
+            option (QtWidgets.QStyleOptionGraphicsItem): used to describe the parameters needed to draw.
             widget (QtWidgets.QWidget): not used.
         """
         self.auto_switch_mode()
@@ -198,7 +199,7 @@ class NodeItem(AbstractNodeItem):
         else:
             raise RuntimeError('Node graph layout direction not valid!')
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         """
         Re-implemented to ignore event if LMB is over port collision area.
 
@@ -216,7 +217,7 @@ class NodeItem(AbstractNodeItem):
                     return
         super(NodeItem, self).mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         """
         Re-implemented to ignore event if Alt modifier is pressed.
 
@@ -228,7 +229,7 @@ class NodeItem(AbstractNodeItem):
             return
         super(NodeItem, self).mouseReleaseEvent(event)
 
-    def mouseDoubleClickEvent(self, event):
+    def mouseDoubleClickEvent(self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         """
         Re-implemented to emit "node_double_clicked" signal.
 
@@ -250,13 +251,13 @@ class NodeItem(AbstractNodeItem):
                 viewer.node_double_clicked.emit(self.id)
         super(NodeItem, self).mouseDoubleClickEvent(event)
 
-    def itemChange(self, change, value):
+    def itemChange(self, change: 'GraphicsItemChange', value: Any) -> Any:
         """
         Re-implemented to update pipes on selection changed.
 
         Args:
-            change:
-            value:
+            change: Graphics item change.
+            value: Change value.
         """
         if change == self.GraphicsItemChange.ItemSelectedChange and self.scene():
             self.reset_pipes()
@@ -268,7 +269,7 @@ class NodeItem(AbstractNodeItem):
 
         return super(NodeItem, self).itemChange(change, value)
 
-    def _tooltip_disable(self, state):
+    def _tooltip_disable(self, state: bool) -> None:
         """
         Updates the node tooltip when the node is enabled/disabled.
 
@@ -281,7 +282,7 @@ class NodeItem(AbstractNodeItem):
         tooltip += '<br/>{}<br/>'.format(self.type_)
         self.setToolTip(tooltip)
 
-    def _set_base_size(self, add_w=0.0, add_h=0.0):
+    def _set_base_size(self, add_w: float = 0.0, add_h: float = 0.0) -> None:
         """
         Sets the initial base size for the node.
 
@@ -295,9 +296,9 @@ class NodeItem(AbstractNodeItem):
         if self._height < NodeEnum.HEIGHT.value:
             self._height = NodeEnum.HEIGHT.value
 
-    def _set_text_color(self, color):
+    def _set_text_color(self, color: Tuple[int, int, int, int]) -> None:
         """
-        set text color.
+        Set text color.
 
         Args:
             color (tuple): color value in (r, g, b, a).
@@ -309,16 +310,16 @@ class NodeItem(AbstractNodeItem):
             text.setDefaultTextColor(text_color)
         self._text_item.setDefaultTextColor(text_color)
 
-    def activate_pipes(self):
+    def activate_pipes(self) -> None:
         """
-        active pipe color.
+        Activate pipe color.
         """
         ports = self.inputs + self.outputs
         for port in ports:
             for pipe in port.connected_pipes:
                 pipe.activate()
 
-    def highlight_pipes(self):
+    def highlight_pipes(self) -> None:
         """
         Highlight pipe color.
         """
@@ -327,7 +328,7 @@ class NodeItem(AbstractNodeItem):
             for pipe in port.connected_pipes:
                 pipe.highlight()
 
-    def reset_pipes(self):
+    def reset_pipes(self) -> None:
         """
         Reset all the pipe colors.
         """
@@ -336,7 +337,7 @@ class NodeItem(AbstractNodeItem):
             for pipe in port.connected_pipes:
                 pipe.reset()
 
-    def _calc_size_horizontal(self):
+    def _calc_size_horizontal(self) -> None:
         # width, height from node name text.
         text_w = self._text_item.boundingRect().width()
         text_h = self._text_item.boundingRect().height()
@@ -398,7 +399,7 @@ class NodeItem(AbstractNodeItem):
         height *= 1.05
         return width, height
 
-    def _calc_size_vertical(self):
+    def _calc_size_vertical(self) -> None:
         p_input_width = 0.0
         p_output_width = 0.0
         p_input_height = 0.0
@@ -427,7 +428,7 @@ class NodeItem(AbstractNodeItem):
         height = p_input_height + p_output_height + widget_height
         return width, height
 
-    def calc_size(self, add_w=0.0, add_h=0.0):
+    def calc_size(self, add_w: float = 0.0, add_h: float = 0.0) -> Tuple[float, float]:
         """
         Calculates the minimum node size.
 
@@ -450,14 +451,14 @@ class NodeItem(AbstractNodeItem):
         height += add_h
         return width, height
 
-    def _align_icon_horizontal(self, h_offset, v_offset):
+    def _align_icon_horizontal(self, h_offset: float, v_offset: float) -> None:
         icon_rect = self._icon_item.boundingRect()
         text_rect = self._text_item.boundingRect()
         x = self.boundingRect().left() + 2.0
         y = text_rect.center().y() - (icon_rect.height() / 2)
         self._icon_item.setPos(x + h_offset, y + v_offset)
 
-    def _align_icon_vertical(self, h_offset, v_offset):
+    def _align_icon_vertical(self, h_offset: float, v_offset: float) -> None:
         center_y = self.boundingRect().center().y()
         icon_rect = self._icon_item.boundingRect()
         text_rect = self._text_item.boundingRect()
@@ -465,7 +466,7 @@ class NodeItem(AbstractNodeItem):
         y = center_y - text_rect.height() - (icon_rect.height() / 2) + v_offset
         self._icon_item.setPos(x, y)
 
-    def align_icon(self, h_offset=0.0, v_offset=0.0):
+    def align_icon(self, h_offset: float = 0.0, v_offset: float = 0.0) -> None:
         """
         Align node icon to the default top left of the node.
 
@@ -480,19 +481,19 @@ class NodeItem(AbstractNodeItem):
         else:
             raise RuntimeError('Node graph layout direction not valid!')
 
-    def _align_label_horizontal(self, h_offset, v_offset):
+    def _align_label_horizontal(self, h_offset: float, v_offset: float) -> None:
         rect = self.boundingRect()
         text_rect = self._text_item.boundingRect()
         x = rect.center().x() - (text_rect.width() / 2)
         self._text_item.setPos(x + h_offset, rect.y() + v_offset)
 
-    def _align_label_vertical(self, h_offset, v_offset):
+    def _align_label_vertical(self, h_offset: float, v_offset: float) -> None:
         rect = self._text_item.boundingRect()
         x = self.boundingRect().right() + h_offset
         y = self.boundingRect().center().y() - (rect.height() / 2) + v_offset
         self.text_item.setPos(x, y)
 
-    def align_label(self, h_offset=0.0, v_offset=0.0):
+    def align_label(self, h_offset: float = 0.0, v_offset: float = 0.0) -> None:
         """
         Center node label text to the top of the node.
 
@@ -507,7 +508,7 @@ class NodeItem(AbstractNodeItem):
         else:
             raise RuntimeError('Node graph layout direction not valid!')
 
-    def _align_widgets_horizontal(self, v_offset):
+    def _align_widgets_horizontal(self, v_offset: float) -> None:
         if not self._widgets:
             return
         rect = self.boundingRect()
@@ -530,7 +531,7 @@ class NodeItem(AbstractNodeItem):
             widget.setPos(x, y)
             y += widget_rect.height()
 
-    def _align_widgets_vertical(self, v_offset):
+    def _align_widgets_vertical(self, v_offset: float) -> None:
         if not self._widgets:
             return
         rect = self.boundingRect()
@@ -552,7 +553,7 @@ class NodeItem(AbstractNodeItem):
             widget.setPos(x, y)
             y += widget_rect.height()
 
-    def align_widgets(self, v_offset=0.0):
+    def align_widgets(self, v_offset: float = 0.0) -> None:
         """
         Align node widgets to the default center of the node.
 
@@ -566,7 +567,7 @@ class NodeItem(AbstractNodeItem):
         else:
             raise RuntimeError('Node graph layout direction not valid!')
 
-    def _align_ports_horizontal(self, v_offset):
+    def _align_ports_horizontal(self, v_offset: float) -> None:
         width = self._width
         txt_offset = PortEnum.CLICK_FALLOFF.value - 2
         spacing = 1
@@ -604,7 +605,7 @@ class NodeItem(AbstractNodeItem):
                 txt_x = port.x() - txt_width
                 text.setPos(txt_x, port.y() - 1.5)
 
-    def _align_ports_vertical(self, v_offset):
+    def _align_ports_vertical(self, v_offset: float) -> None:
         # adjust input position
         inputs = [p for p in self.inputs if p.isVisible()]
         if inputs:
@@ -631,7 +632,7 @@ class NodeItem(AbstractNodeItem):
                 port.setPos(port_x - half_width, port_y)
                 port_x += delta
 
-    def align_ports(self, v_offset=0.0):
+    def align_ports(self, v_offset: float = 0.0) -> None:
         """
         Align input, output ports in the node layout.
 
@@ -645,7 +646,7 @@ class NodeItem(AbstractNodeItem):
         else:
             raise RuntimeError('Node graph layout direction not valid!')
 
-    def _draw_node_horizontal(self):
+    def _draw_node_horizontal(self) -> None:
         height = self._text_item.boundingRect().height() + 4.0
 
         # update port text items in visibility.
@@ -677,7 +678,7 @@ class NodeItem(AbstractNodeItem):
 
         self.update()
 
-    def _draw_node_vertical(self):
+    def _draw_node_vertical(self) -> None:
         # hide the port text items in vertical layout.
         for port, text in self._input_items.items():
             text.setVisible(False)
@@ -705,7 +706,7 @@ class NodeItem(AbstractNodeItem):
 
         self.update()
 
-    def draw_node(self):
+    def draw_node(self) -> None:
         """
         Re-draw the node item in the scene with proper
         calculated size and widgets aligned.
@@ -720,7 +721,7 @@ class NodeItem(AbstractNodeItem):
     # FIXME: Hmm redeclare of post_init above but commit date is 2019... while
     #  the above is from 2022... as of 2024-02-13, this is still on the main branch
     #  of NodeGraphQt so will leave this first
-    def post_init(self, viewer=None, pos=None):
+    def post_init(self, viewer: Optional['NodeViewer'] = None, pos: Optional[Tuple[float, float]] = None) -> None:
         """
         Called after node has been added into the scene.
         Adjust the node layout and form after the node has been added.
@@ -735,7 +736,7 @@ class NodeItem(AbstractNodeItem):
         if pos:
             self.xy_pos = pos
 
-    def auto_switch_mode(self):
+    def auto_switch_mode(self) -> None:
         """
         Decide whether to draw the node with proxy mode.
         (this is called at the start in the "self.paint()" function.)
@@ -753,7 +754,7 @@ class NodeItem(AbstractNodeItem):
 
         self.set_proxy_mode(width < self._proxy_mode_threshold)
 
-    def set_proxy_mode(self, mode):
+    def set_proxy_mode(self, mode: bool) -> None:
         """
         Set whether to draw the node with proxy mode.
         (proxy mode toggles visibility for some qgraphic items in the node.)
@@ -794,11 +795,11 @@ class NodeItem(AbstractNodeItem):
         self._icon_item.setVisible(visible)
 
     @property
-    def icon(self):
+    def icon(self) -> str:
         return self._properties['icon']
 
     @icon.setter
-    def icon(self, path=None):
+    def icon(self, path: Optional[str] = None) -> None:
         self._properties['icon'] = path
         path = path or ICON_NODE_BASE
         pixmap = QtGui.QPixmap(path)
@@ -814,25 +815,25 @@ class NodeItem(AbstractNodeItem):
         self.update()
 
     @AbstractNodeItem.layout_direction.setter
-    def layout_direction(self, value=0):
+    def layout_direction(self, value: int = 0) -> None:
         AbstractNodeItem.layout_direction.fset(self, value)
         self.draw_node()
 
     @AbstractNodeItem.width.setter
-    def width(self, width=0.0):
+    def width(self, width: float = 0.0) -> None:
         w, h = self.calc_size()
         width = width if width > w else w
         AbstractNodeItem.width.fset(self, width)
 
     @AbstractNodeItem.height.setter
-    def height(self, height=0.0):
+    def height(self, height: float = 0.0) -> None:
         w, h = self.calc_size()
         h = 70 if h < 70 else h
         height = height if height > h else h
         AbstractNodeItem.height.fset(self, height)
 
     @AbstractNodeItem.disabled.setter
-    def disabled(self, state=False):
+    def disabled(self, state: bool = False) -> None:
         AbstractNodeItem.disabled.fset(self, state)
         for n, w in self._widgets.items():
             w.widget().setDisabled(state)
@@ -840,13 +841,13 @@ class NodeItem(AbstractNodeItem):
         self._x_item.setVisible(state)
 
     @AbstractNodeItem.selected.setter
-    def selected(self, selected=False):
+    def selected(self, selected: bool = False) -> None:
         AbstractNodeItem.selected.fset(self, selected)
         if selected:
             self.highlight_pipes()
 
     @AbstractNodeItem.name.setter
-    def name(self, name=''):
+    def name(self, name: str = '') -> None:
         AbstractNodeItem.name.fset(self, name)
         if name == self._text_item.toPlainText():
             return
@@ -856,20 +857,20 @@ class NodeItem(AbstractNodeItem):
         self.update()
 
     @AbstractNodeItem.color.setter
-    def color(self, color=(100, 100, 100, 255)):
+    def color(self, color: Tuple[int, int, int, int] = (100, 100, 100, 255)) -> None:
         AbstractNodeItem.color.fset(self, color)
         if self.scene():
             self.scene().update()
         self.update()
 
     @AbstractNodeItem.text_color.setter
-    def text_color(self, color=(100, 100, 100, 255)):
+    def text_color(self, color: Tuple[int, int, int, int] = (100, 100, 100, 255)) -> None:
         AbstractNodeItem.text_color.fset(self, color)
         self._set_text_color(color)
         self.update()
 
     @property
-    def text_item(self):
+    def text_item(self) -> NodeTextItem:
         """
         Get the node name text qgraphics item.
 
@@ -879,7 +880,7 @@ class NodeItem(AbstractNodeItem):
         return self._text_item
 
     @property
-    def icon_item(self):
+    def icon_item(self) -> QtWidgets.QGraphicsPixmapItem:
         """
         Get the node icon qgraphics item.
         Returns:
@@ -888,7 +889,7 @@ class NodeItem(AbstractNodeItem):
         return self._icon_item
 
     @property
-    def inputs(self):
+    def inputs(self) -> list[PortItem]:
         """
         Returns:
             list[PortItem]: input port graphic items.
@@ -896,14 +897,14 @@ class NodeItem(AbstractNodeItem):
         return list(self._input_items.keys())
 
     @property
-    def outputs(self):
+    def outputs(self) -> list[PortItem]:
         """
         Returns:
             list[PortItem]: output port graphic items.
         """
         return list(self._output_items.keys())
 
-    def _add_port(self, port):
+    def _add_port(self, port: PortItem) -> PortItem:
         """
         Adds a port qgraphics item into the node.
 
@@ -928,12 +929,12 @@ class NodeItem(AbstractNodeItem):
 
     def add_input(
             self,
-            name='input',
-            multi_port=False,
-            display_name=True,
-            locked=False,
-            painter_func=None,
-    ):
+            name: str = 'input',
+            multi_port: bool = False,
+            display_name: bool = True,
+            locked: bool = False,
+            painter_func: Optional[Callable] = None,
+    ) -> PortItem:
         """
         Adds a port qgraphics item into the node with the "port_type" set as
         IN_PORT.
@@ -959,8 +960,8 @@ class NodeItem(AbstractNodeItem):
         port.locked = locked
         return self._add_port(port)
 
-    def add_output(self, name='output', multi_port=False, display_name=True,
-                   locked=False, painter_func=None):
+    def add_output(self, name: str = 'output', multi_port: bool = False, display_name: bool = True,
+                   locked: bool = False, painter_func: Optional[callable] = None) -> PortItem:
         """
         Adds a port qgraphics item into the node with the "port_type" set as
         OUT_PORT.
@@ -986,7 +987,7 @@ class NodeItem(AbstractNodeItem):
         port.locked = locked
         return self._add_port(port)
 
-    def _delete_port(self, port, text):
+    def _delete_port(self, port: PortItem, text: QtWidgets.QGraphicsTextItem) -> None:
         """
         Removes port item and port text from node.
 
@@ -1001,7 +1002,7 @@ class NodeItem(AbstractNodeItem):
         del port
         del text
 
-    def delete_input(self, port):
+    def delete_input(self, port: PortItem) -> None:
         """
         Remove input port from node.
 
@@ -1010,7 +1011,7 @@ class NodeItem(AbstractNodeItem):
         """
         self._delete_port(port, self._input_items.pop(port))
 
-    def delete_output(self, port):
+    def delete_output(self, port: PortItem) -> None:
         """
         Remove output port from node.
 
@@ -1019,7 +1020,7 @@ class NodeItem(AbstractNodeItem):
         """
         self._delete_port(port, self._output_items.pop(port))
 
-    def get_input_text_item(self, port_item):
+    def get_input_text_item(self, port_item: PortItem) -> QtWidgets.QGraphicsTextItem:
         """
         Args:
             port_item (PortItem): port item.
@@ -1029,7 +1030,7 @@ class NodeItem(AbstractNodeItem):
         """
         return self._input_items[port_item]
 
-    def get_output_text_item(self, port_item):
+    def get_output_text_item(self, port_item: PortItem) -> QtWidgets.QGraphicsTextItem:
         """
         Args:
             port_item (PortItem): port item.
@@ -1040,22 +1041,22 @@ class NodeItem(AbstractNodeItem):
         return self._output_items[port_item]
 
     @property
-    def widgets(self):
+    def widgets(self) -> dict:
         return self._widgets.copy()
 
-    def add_widget(self, widget):
+    def add_widget(self, widget: Any) -> None:
         self._widgets[widget.get_name()] = widget
 
-    def get_widget(self, name):
+    def get_widget(self, name: str) -> Any:
         widget = self._widgets.get(name)
         if widget:
             return widget
         raise NodeWidgetError('node has no widget "{}"'.format(name))
 
-    def has_widget(self, name):
+    def has_widget(self, name: str) -> bool:
         return name in self._widgets.keys()
 
-    def from_dict(self, node_dict):
+    def from_dict(self, node_dict: dict) -> None:
         super().from_dict(node_dict)
         custom_prop = node_dict.get("custom") or {}
         for prop_name, value in custom_prop.items():

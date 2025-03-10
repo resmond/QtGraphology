@@ -2,19 +2,12 @@
 import json
 from collections import defaultdict
 from re import S
-from tkinter import N
+#from tkinter import N
 from typing import Any, Literal, Self
 
-from QtGraphology.constants import (
-    LayoutDirectionEnum,
-    NodePropWidgetEnum,
-    PipeLayoutEnum
-#    QGraphNodeType,
-)
 from QtGraphology.errors import NodePropertyError
-
 from QtGraphology.base.node import NodeObject
-
+from QtGraphology.constants import *
 class PortModel(object):
     """
     Data dump for a port object.
@@ -30,12 +23,12 @@ class PortModel(object):
         self.locked: bool = False
         self.connected_ports: defaultdict[str, list] = defaultdict(list)
 
-    def __repr__(self):
+    def __repr__(self: Self) -> str:
         return '<{}(\'{}\') object at {}>'.format(
             self.__class__.__name__, self.name, hex(id(self)))
 
     @property
-    def to_dict(self):
+    def to_dict(self: Self) -> dict[str, Any]:
         """
         serialize model information to a dictionary.
 
@@ -51,7 +44,7 @@ class PortModel(object):
                     'connected_ports': {<node_id>: [<port_name>, <port_name>]}
                 }
         """
-        props = self.__dict__.copy()
+        props: dict[str, Any] = self.__dict__.copy()
         props.pop('node')
         props['connected_ports'] = dict(props.pop('connected_ports'))
         return props
@@ -62,39 +55,39 @@ class NodeModel(object):
     Data dump for a node object.
     """
 
-    def __init__(self):
-        self.type_: str = None
+    def __init__(self: Self) -> None:
+        self.type_: str = ''
         self.id: str = hex(id(self))
-        self.icon: str | None = None
+        self.icon: str = ''
         self.name: str = 'node'
-        self.color: tuple[Literal[13], Literal[18], Literal[23], Literal[255]] = (13, 18, 23, 255)
-        self.border_color: tuple[Literal[74], Literal[84], Literal[85], Literal[255]] = (74, 84, 85, 255)
-        self.text_color: tuple[Literal[255], Literal[255], Literal[255], Literal[180]] = (255, 255, 255, 180)
+        self.color: TCOLOR = (13, 18, 23, 255)
+        self.border_color: TCOLOR = (74, 84, 85, 255)
+        self.text_color: TCOLOR = (255, 255, 255, 180)
         self.disabled: bool = False
         self.selected: bool = False
         self.visible: bool = True
         self.width: float = 100.0
         self.height: float = 80.0
         self.pos: list[float] = [0.0, 0.0]
-        self.layout_direction: LayoutDirectionEnum = LayoutDirectionEnum.HORIZONTAL.value
+        self.layout_direction: LayoutDirectionEnum = LayoutDirectionEnum.HORIZONTAL
 
         # BaseNode attrs.
-        self.inputs: dict = {}
-        self.outputs: dict = {}
+        self.inputs: dict[str, Any] = {}
+        self.outputs: dict[str,Any] = {}
         self.port_deletion_allowed: bool = False
 
         # GroupNode attrs.
-        self.subgraph_session: dict = {}
+        self.subgraph_session: dict[str, Any] = {}
 
         # Custom
-        self._custom_prop: dict = {}
+        self._custom_prop: dict[str,Any] = {}
 
         # node graph model set at node added time.
         self._graph_model: NodeGraphModel | None = None
 
         # store the property attributes.
         # (deleted when node is added to the graph)
-        self._TEMP_property_attrs: dict = {}
+        self._TEMP_property_attrs: dict[str,Any] = {}
 
         # temp store the property widget types.
         # (deleted when node is added to the graph)
@@ -119,24 +112,23 @@ class NodeModel(object):
         # temp store connection constrains.
         # (deleted when node is added to the graph)
         # OGQ-1: refer to NodeGraph.add_node for the temp key pop
-        self._TEMP_accept_connection_types: dict = {}
-        self._TEMP_reject_connection_types: dict = {}
+        self._TEMP_accept_connection_types: dict[str, Any] = {}
+        self._TEMP_reject_connection_types: dict[str, Any] = {}
 
-    def __repr__(self):
-        return '<{}(\'{}\') object at {}>'.format(
-            self.__class__.__name__, self.name, self.id)
+    def __repr__(self: Self) -> str:
+        return f'<{self.__class__.__name__}(\'{self.name}\') object at {self.id}>'
 
     def add_property(
-            self,
-            name,
-            value,
-            items=None,
-            range=None,
-            widget_type=None,
-            widget_tooltip=None,
-            tab=None,
-            **kwargs,
-    ):
+            self: Self,
+            name: str,
+            value: Any,
+            items: list[Any] = [],
+            range: Any = None,
+            widget_type: NodePropWidgetEnum = NodePropWidgetEnum.HIDDEN,
+            widget_tooltip: str='',
+            tab: str | None=None,
+            **kwargs: dict[str, Any]
+    ) -> None:
         """
         add custom property or raises an error if the property name is already
         taken.
@@ -150,8 +142,8 @@ class NodeModel(object):
             widget_tooltip (str): custom tooltip for the property widget.
             tab (str): widget tab name.
         """
-        widget_type = widget_type or NodePropWidgetEnum.HIDDEN.value
-        tab = tab or 'Properties'
+        widget_type: NodePropWidgetEnum = widget_type
+        tab: str | None = tab or 'Properties'
 
         if name in self.properties.keys():
             raise NodePropertyError(
@@ -174,7 +166,7 @@ class NodeModel(object):
             if kwargs:
                 self._TEMP_property_attrs[name].update(kwargs)
         else:
-            attrs = {
+            attrs: dict[str, dict[str, dict[str, NodePropWidgetEnum | str]]] = {
                 self.type_: {
                     name: {
                         'widget_type': widget_type,
@@ -368,6 +360,7 @@ class NodeModel(object):
 
         return props
 
+    @property
     def properties(self: Self) -> dict[str, Any]:
         """
         return all custom properties specified by the user.

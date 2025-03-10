@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Literal, TypedDict, Self, Any
 
 if TYPE_CHECKING:
     from QtGraphology.qgraphics.node_base import NodeItem
@@ -29,8 +29,8 @@ class PortItem(QtWidgets.QGraphicsItem):
         super().__init__(parent)
         self.setAcceptHoverEvents(True)
         self.setCacheMode(ITEM_CACHE_MODE)
-        self.setFlag(self.GraphicsItemFlag.ItemIsSelectable, False)
-        self.setFlag(self.GraphicsItemFlag.ItemSendsScenePositionChanges, True)
+        self.setFlag(self.GraphicsItemFlag.ItemIsSelectable, enabled=False)
+        self.setFlag(self.GraphicsItemFlag.ItemSendsScenePositionChanges, enabled=True)
         self.setZValue(Z_VAL_PORT)
         self._pipes = []
         self._width: float = PortEnum.SIZE.value

@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self, Any
+
+from QtGraphology.qgraphics.node_abstract import AbstractNodeItem
 
 
 if TYPE_CHECKING:
@@ -8,15 +10,15 @@ if TYPE_CHECKING:
 
 from QtGraphology.base.commands import PropertyChangedCmd
 from QtGraphology.base.model import NodeModel
-from QtGraphology.constants import NodePropWidgetEnum
+from QtGraphology.constants import NodePropWidgetEnum, LayoutDirectionEnum
 
 
 class _ClassProperty(object):
 
-    def __init__(self, f):
-        self.f = f
+    def __init__(self: Self, f: Any) -> None:
+        self.f: Any = f
 
-    def __get__(self, instance, owner):
+    def __get__(self: Self, instance, owner: Any)->Any:
         return self.f(owner)
 
 
@@ -31,7 +33,8 @@ class NodeObject(object):
         qgraphics_item (AbstractNodeItem): QGraphicsItem item used for drawing.
     """
 
-    __identifier__ = 'QtGraphology.nodes'
+    __identifier__: str = 'QtGraphology.nodes'
+
     """
     Unique node identifier domain. eg. ``"io.github.resmond"``
 
@@ -57,6 +60,7 @@ class NodeObject(object):
     """
 
     NODE_NAME = None
+
     """
     Initial base node name.
 
@@ -81,33 +85,31 @@ class NodeObject(object):
     :meta hide-value:
     """
 
-    def __init__(self, qgraphics_item=None):
+    def __init__(self, qgraphics_item: AbstractNodeItem | None = None):
         """
         Args:
             qgraphics_item (AbstractNodeItem): QGraphicsItem used for drawing.
         """
         self._graph = None
-        self._model = NodeModel()
+        self._model: NodeModel = NodeModel()
         self._model.type_ = self.type_
-        self._model.name = self.NODE_NAME
+        self._model.name = 'NodeObject'    #self.NODE_NAME
 
-        _NodeItem = qgraphics_item
+        _NodeItem: AbstractNodeItem | None = qgraphics_item
         if _NodeItem is None:
             raise RuntimeError(
                 'No qgraphics item specified for the node object!'
             )
 
-        self._view: AbstractNodeItem = _NodeItem()
+        self._view: AbstractNodeItem = AbstractNodeItem()
         self._view.identifier = self.__identifier__
         self._view.type_ = self.type_
         self._view.name = self.model.name
         self._view.id = self._model.id
         self._view.layout_direction = self._model.layout_direction
 
-    def __repr__(self):
-        return '<{}("{}") object at {}>'.format(
-            self.__class__.__name__, self.NODE_NAME, hex(id(self)))
-
+    def __repr__(self: Self) -> str:
+        return f'<{self.__class__.__name__}("{self.NODE_NAME}") object at {hex(id(self))}>'
     @_ClassProperty
     def type_(cls):
         """
