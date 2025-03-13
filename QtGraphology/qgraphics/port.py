@@ -1,9 +1,10 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
-from typing import TYPE_CHECKING, Literal, TypedDict, Self, Any
+from typing import Literal, TypedDict, Self, Any
 
-if TYPE_CHECKING:
-    from QtGraphology.qgraphics.node_base import NodeItem
+#if TYPE_CHECKING:
+from QtGraphology.qgraphics.node_base import NodeItem
 
 from PySide6 import QtCore, QtGui, QtWidgets
 

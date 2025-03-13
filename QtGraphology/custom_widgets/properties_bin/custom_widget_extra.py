@@ -1,4 +1,6 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from typing     import Self, Any, TypedDict
 import importlib.util
 

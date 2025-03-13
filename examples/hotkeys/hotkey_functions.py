@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
 # ------------------------------------------------------------------------------
 # menu command functions

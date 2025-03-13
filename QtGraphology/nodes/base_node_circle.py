@@ -1,4 +1,7 @@
 #!/usr/bin/python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from QtGraphology.nodes.base_node import BaseNode
 from QtGraphology.qgraphics.node_circle import CircleNodeItem
 

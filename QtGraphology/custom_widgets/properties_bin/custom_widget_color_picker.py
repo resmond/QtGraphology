@@ -1,4 +1,7 @@
 #!/usr/bin/python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from PySide6 import QtWidgets, QtCore, QtGui
 
 from .custom_widget_vectors import PropVector3, PropVector4

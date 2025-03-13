@@ -1,5 +1,7 @@
 #!/usr/bin/python
 from __future__ import annotations
+from typing     import TYPE_CHECKING
+
 from typing     import Self, Any
 
 from QtGraphology.custom_widgets import CustomCheckBox

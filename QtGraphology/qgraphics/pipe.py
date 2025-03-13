@@ -1,4 +1,7 @@
 #!/usr/bin/python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import math
 
 from PySide6 import QtCore, QtGui, QtWidgets

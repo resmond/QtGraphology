@@ -1,4 +1,7 @@
 #!/usr/bin/python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from typing import Self, Any
 from PySide6 import QtCore, QtWidgets, QtGui
 

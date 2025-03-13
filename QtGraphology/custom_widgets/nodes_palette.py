@@ -1,11 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from collections import defaultdict
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from QtGraphology.constants import MIME_TYPE, URN_SCHEME
-
 
 class NodesGridDelagate(QtWidgets.QStyledItemDelegate):
 

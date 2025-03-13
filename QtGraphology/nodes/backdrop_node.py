@@ -1,4 +1,7 @@
 #!/usr/bin/python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from QtGraphology.base.node import NodeObject
 from QtGraphology.constants import NodePropWidgetEnum
 from QtGraphology.qgraphics.node_backdrop import BackdropNodeItem

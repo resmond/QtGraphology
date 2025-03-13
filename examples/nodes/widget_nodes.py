@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from QtGraphology import BaseNode
 from QtGraphology.constants import NodePropWidgetEnum
 from QtGraphology.widgets.node_widgets import NodeLineEditValidatorCheckBox

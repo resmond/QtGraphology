@@ -1,4 +1,6 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from typing     import Self, Any
 
 from QtGraphology.constants import NodePropWidgetEnum
@@ -19,7 +21,6 @@ from .prop_widgets_base import (
     PropSpinBox,
     PropDoubleSpinBox
 )
-
 
 class NodePropertyWidgetFactory(object):
     """

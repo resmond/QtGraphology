@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from collections import OrderedDict
 from typing import Any, Self

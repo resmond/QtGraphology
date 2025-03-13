@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Self, Any
+from typing import TYPE_CHECKING
+
+from typing import Self, Any
 
 from QtGraphology.qgraphics.node_abstract import AbstractNodeItem
 

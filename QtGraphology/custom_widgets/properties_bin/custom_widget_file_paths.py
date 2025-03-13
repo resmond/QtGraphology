@@ -1,5 +1,7 @@
 #!/usr/bin/python
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from typing     import Self, Any
 
 from PySide6 import QtWidgets, QtCore
@@ -62,7 +64,6 @@ class PropFilePath(BaseProperty):
         if _value != self.get_value():
             self._ledit.setText(_value)
             self._on_value_change(_value)
-
 
 class PropFileSavePath(PropFilePath):
     """

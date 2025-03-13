@@ -1,3 +1,8 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from typing import Self, Any
+
 import signal
 
 from PySide6 import QtWidgets

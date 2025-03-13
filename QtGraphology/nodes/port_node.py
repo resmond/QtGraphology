@@ -1,4 +1,7 @@
 #!/usr/bin/python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from typing import NoReturn, Self, Any
 
 from QtGraphology.errors import PortRegistrationError

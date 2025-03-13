@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 import math
 # distutils.version is deprecated and will be removed in Python 3.12

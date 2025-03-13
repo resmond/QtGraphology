@@ -1,5 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from .pkg_info import __version__ as VERSION
 from .pkg_info import __license__ as LICENSE
 

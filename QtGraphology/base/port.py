@@ -1,6 +1,7 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
-from typing import TYPE_CHECKING, Any, Never, Self
+from typing import Any, Never, Self
 
 from PySide6.QtGui import QUndoStack
 
