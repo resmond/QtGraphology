@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import annotations
+from typing     import Self, Any
 from collections import defaultdict
 
 from QtGraphology import BackdropNode
@@ -12,34 +14,36 @@ from ...constants import NodePropWidgetEnum
 
 class _PropertiesDelegate(QtWidgets.QStyledItemDelegate):
 
-    def paint(self, painter, option, index):
+    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem,
+              index: QtCore.QModelIndex | QtCore.QPersistentModelIndex, /) -> None:
         """
         Args:
-            painter (QtGui.QPainter):
-            option (QtGui.QStyleOptionViewItem):
-            index (QtCore.QModelIndex):
+            painter (QtGui.QPainter): The painter used to draw the item.
+            option (QtWidgets.QStyleOptionViewItem): Style options for the item.
+            index (QtCore.QModelIndex): Index of the item to be drawn.
         """
         painter.save()
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, False)
         painter.setPen(QtCore.Qt.PenStyle.NoPen)
 
         # draw background.
-        bg_clr = option.palette.base().color()
+        bg_clr = QtWidgets.QApplication.palette().base().color()
         painter.setBrush(QtGui.QBrush(bg_clr))
-        painter.drawRect(option.rect)
+        rect = option.rect  # QStyleOptionViewItem inherits rect from QStyleOption
+        painter.drawRect(rect)
 
         # draw border.
         border_width = 1
         if option.state & QtWidgets.QStyle.StateFlag.State_Selected:
-            bdr_clr = option.palette.highlight().color()
+            bdr_clr = QtWidgets.QApplication.palette().highlight().color()
             painter.setPen(QtGui.QPen(bdr_clr, 1.5))
         else:
-            bdr_clr = option.palette.alternateBase().color()
+            bdr_clr = QtWidgets.QApplication.palette().alternateBase().color()
             painter.setPen(QtGui.QPen(bdr_clr, 1))
 
         painter.setBrush(QtCore.Qt.BrushStyle.NoBrush)
         painter.drawRect(QtCore.QRect(
-            option.rect.x() + border_width,
+            rect.x() + border_width,
             option.rect.y() + border_width,
             option.rect.width() - (border_width * 2),
             option.rect.height() - (border_width * 2))

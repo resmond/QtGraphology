@@ -1,4 +1,7 @@
 #!/usr/bin/python
+from __future__ import annotations
+from typing     import Self, Any
+
 from PySide6 import QtWidgets
 
 from .custom_widget_value_edit import _NumberValueEdit

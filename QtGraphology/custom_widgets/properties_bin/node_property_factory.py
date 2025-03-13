@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing     import Self, Any
+
 from QtGraphology.constants import NodePropWidgetEnum
 from QtGraphology.custom_widgets.properties_bin.prop_widgets_abstract import BaseProperty
 
@@ -24,7 +27,7 @@ class NodePropertyWidgetFactory(object):
     to the Properties bin.
     """
 
-    def __init__(self):
+    def __init__(self: Self) -> None:
         self._widget_mapping = {
             NodePropWidgetEnum.HIDDEN.value: None,
             # base widgets.
@@ -51,15 +54,19 @@ class NodePropertyWidgetFactory(object):
             NodePropWidgetEnum.LINEEDIT_VALIDATOR_CHECKBOX.value: PropLineEditValidatorCheckBox,
         }
 
-    def get_widget(self, widget_type=NodePropWidgetEnum.HIDDEN.value) -> BaseProperty:
+    def get_widget(self: Self, widget_type=NodePropWidgetEnum.HIDDEN.value, parent=None) -> Any:
         """
         Return a new instance of a node property widget.
 
         Args:
             widget_type (int): widget type index.
+            parent (QtWidgets.QWidget, optional): parent widget. Defaults to None.
 
         Returns:
-            BaseProperty: node property widget.
+            Any: node property widget.
         """
         if widget_type in self._widget_mapping:
-            return self._widget_mapping[widget_type]()
+            widget_class = self._widget_mapping[widget_type]
+            if widget_class is None:
+                return None
+            return widget_class(parent)

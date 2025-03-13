@@ -1,4 +1,7 @@
 #!/usr/bin/python
+from __future__ import annotations
+from typing     import Self, Any
+
 from PySide6 import QtWidgets, QtCore
 
 from QtGraphology.widgets.dialogs import FileDialog
@@ -11,7 +14,7 @@ class PropFilePath(BaseProperty):
     PropertiesBin.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self: Self, parent: QtWidgets.QWidget | None = None):
         super(PropFilePath, self).__init__(parent)
         self._ledit = QtWidgets.QLineEdit()
         self._ledit.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
@@ -31,7 +34,7 @@ class PropFilePath(BaseProperty):
         self._ext = '*'
         self._file_directory = None
 
-    def _on_select_file(self):
+    def _on_select_file(self: Self) -> None:
         file_path = FileDialog.getOpenFileName(self,
                                                file_dir=self._file_directory,
                                                ext_filter=self._ext)
@@ -39,22 +42,22 @@ class PropFilePath(BaseProperty):
         if file:
             self.set_value(file)
 
-    def _on_value_change(self, value=None):
+    def _on_value_change(self: Self, value: Any = None) -> None:
         if value is None:
             value = self._ledit.text()
         self.set_file_directory(value)
         self.value_changed.emit(self.toolTip(), value)
 
-    def set_file_ext(self, ext=None):
+    def set_file_ext(self, ext: str | None = None) -> None:
         self._ext = ext or '*'
 
-    def set_file_directory(self, directory):
+    def set_file_directory(self, directory: str | None) -> None:
         self._file_directory = directory
 
-    def get_value(self):
+    def get_value(self) -> str:
         return self._ledit.text()
 
-    def set_value(self, value):
+    def set_value(self, value: Any) -> None:
         _value = str(value)
         if _value != self.get_value():
             self._ledit.setText(_value)
@@ -67,7 +70,7 @@ class PropFileSavePath(PropFilePath):
     PropertiesBin.
     """
 
-    def _on_select_file(self):
+    def _on_select_file(self: Self) -> None:
         file_path = FileDialog.getSaveFileName(self,
                                                file_dir=self._file_directory,
                                                ext_filter=self._ext)

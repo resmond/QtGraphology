@@ -1,12 +1,12 @@
 #!/usr/bin/python
+
+from typing import Self, Any
 from PySide6 import QtGui, QtCore, QtWidgets
 
 from QtGraphology.constants import NodeEnum, Z_VAL_BACKDROP
 from QtGraphology.qgraphics.node_abstract import AbstractNodeItem
 from QtGraphology.qgraphics.pipe import PipeItem
 from QtGraphology.qgraphics.port import PortItem
-
-
 class BackdropSizer(QtWidgets.QGraphicsItem):
     """
     Sizer item for resizing a backdrop item.
@@ -16,30 +16,30 @@ class BackdropSizer(QtWidgets.QGraphicsItem):
         size (float): sizer size.
     """
 
-    def __init__(self, parent=None, size=6.0):
+    def __init__(self: Self, parent:QtWidgets.QGraphicsItem, size=6.0) -> None:
         super(BackdropSizer, self).__init__(parent)
-        self.setFlag(self.GraphicsItemFlag.ItemIsSelectable, True)
-        self.setFlag(self.GraphicsItemFlag.ItemIsMovable, True)
-        self.setFlag(self.GraphicsItemFlag.ItemSendsScenePositionChanges, True)
+        self.setFlag(self.GraphicsItemFlag.ItemIsSelectable, enabled=True)
+        self.setFlag(self.GraphicsItemFlag.ItemIsMovable, enabled=True)
+        self.setFlag(self.GraphicsItemFlag.ItemSendsScenePositionChanges, enabled=True)
         self.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.SizeFDiagCursor))
         self.setToolTip('double-click auto resize')
-        self._size = size
+        self._size: float = size
 
     @property
-    def size(self):
+    def size(self: Self) -> float:
         return self._size
 
-    def set_pos(self, x, y):
+    def set_pos(self: Self, x: float, y: float) -> None:
         x -= self._size
         y -= self._size
         self.setPos(x, y)
 
-    def boundingRect(self):
+    def boundingRect(self: Self) -> QtCore.QRectF:
         return QtCore.QRectF(0.5, 0.5, self._size, self._size)
 
-    def itemChange(self, change, value):
+    def itemChange(self: Self, change, value) -> QtCore.QPointF | Any:
         if change == self.GraphicsItemChange.ItemPositionChange:
-            item = self.parentItem()
+            item: QtWidgets.QGraphicsItem = self.parentItem()
             mx, my = item.minimum_size
             x = mx if value.x() < mx else value.x()
             y = my if value.y() < my else value.y()

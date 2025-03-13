@@ -3,7 +3,6 @@ from typing import Self, Any
 
 from PySide6.QtWidgets import QCheckBox
 
-
 class CustomCheckBox(QCheckBox):
     def __init__(self: Self, *args, **kwargs: dict[str, Any]) -> None:
         super().__init__(*args, **kwargs)
