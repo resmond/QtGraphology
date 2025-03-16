@@ -7,15 +7,13 @@ from PySide6 import QtCore, QtWidgets, QtGui
 
 
 from QtGraphology.constants import ViewerEnum
-
-
+from QtGraphology.base import NodeGraph
 class BaseMenu(QtWidgets.QMenu):
 
     def __init__(self: Self, *args, **kwargs: dict[str, Any]) -> None:
         super(BaseMenu, self).__init__(*args, **kwargs)
         # text_color = self.palette().text().color().getRgb()
-        text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
-                               ViewerEnum.BACKGROUND_COLOR.value))
+        text_color  = tuple(map(lambda i, j: i - j, (255, 255, 255), ViewerEnum.BACKGROUND_COLOR.value))
         selected_color = self.palette().highlight().color().getRgb()
         style_dict = {
             'QMenu': {
@@ -46,16 +44,16 @@ class BaseMenu(QtWidgets.QMenu):
                 'margin': '4px 8px',
             }
         }
-        stylesheet = ''
+        stylesheet: str = ''
         for css_class, css in style_dict.items():
-            style = '{} {{\n'.format(css_class)
+            style = f'{css_class} {{\n'
             for elm_name, elm_val in css.items():
-                style += '  {}:{};\n'.format(elm_name, elm_val)
-            style += '}\n'
+                style += f'  {elm_name}:{elm_val};\n'
+            style += f'}}\n'
             stylesheet += style
         self.setStyleSheet(stylesheet)
-        self.node_class = None
-        self.graph = None
+        self.node_class: type | None = None
+        self.graph: NodeGraph | None = None
 
     # disable for issue #142
     # def hideEvent(self, event):

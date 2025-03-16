@@ -26,12 +26,12 @@ class PortItem(QtWidgets.QGraphicsItem):
     Base Port Item.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QtWidgets.QGraphicsItem | None = None) -> None:
         super().__init__(parent)
         self.setAcceptHoverEvents(True)
         self.setCacheMode(ITEM_CACHE_MODE)
-        self.setFlag(self.GraphicsItemFlag.ItemIsSelectable, enabled=False)
-        self.setFlag(self.GraphicsItemFlag.ItemSendsScenePositionChanges, enabled=True)
+        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, enabled=False)
+        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemSendsScenePositionChanges, enabled=True)
         self.setZValue(Z_VAL_PORT)
         self._pipes = []
         self._width: float = PortEnum.SIZE.value
@@ -80,7 +80,7 @@ class PortItem(QtWidgets.QGraphicsItem):
 
         return result
 
-    def validate_accept_constraint(self, target_port: PortItem) -> bool | None:
+    def validate_accept_constraint(self: Self, target_port: PortItem) -> bool | None:
         if not self._accept_constraint:
             return None
 
@@ -98,7 +98,7 @@ class PortItem(QtWidgets.QGraphicsItem):
             return False
 
         is_valid = False
-        constraints: list[dict] = self._accept_constraint[identifier]
+        constraints: list[TPortConstraint] = self._accept_constraint[identifier]
         for constraint in constraints:
             is_same_name = target_port.name == constraint["port_name"]
             is_same_type = target_port.port_type == constraint["port_type"]
@@ -113,17 +113,17 @@ class PortItem(QtWidgets.QGraphicsItem):
             port_name: str,
             port_type: Literal["in", "out"],
             node_identifier: str,
-    ):
+        ):
         if node_identifier not in self._reject_constraint:
             self._reject_constraint[node_identifier] = []
 
-        data = {
+        data: TPortConstraint = {
             "port_name": port_name,
-            "port_type": port_type,
+            "port_type": port_type
         }
         self._reject_constraint[node_identifier].append(data)
 
-    def validate_reject_constraint(self, target_port: PortItem) -> bool | None:
+    def validate_reject_constraint(self: Self, target_port: PortItem) -> bool | None:
         if not self._reject_constraint:
             return None
 
@@ -140,8 +140,8 @@ class PortItem(QtWidgets.QGraphicsItem):
         if not identifier:
             return False
 
-        is_valid = False
-        constraints: list[dict] = self._reject_constraint[target_port.node.identifier]
+        is_valid: bool = False
+        constraints: list[TPortConstraint] = self._reject_constraint[target_port.node.identifier]
         for constraint in constraints:
             is_same_name = target_port.name == constraint["port_name"]
             is_same_type = target_port.port_type == constraint["port_type"]
@@ -151,18 +151,18 @@ class PortItem(QtWidgets.QGraphicsItem):
 
         return is_valid
 
-    def __str__(self):
-        return '{}.PortItem("{}")'.format(self.__module__, self.name)
+    def __str__(self: Self) -> str:
+        return f'{self.__module__}.PortItem("{self.name}")'
 
-    def __repr__(self):
-        return '{}.PortItem("{}")'.format(self.__module__, self.name)
+    def __repr__(self: Self) -> str:
+        return f'{self.__module__}.PortItem("{self.name}")'
 
-    def boundingRect(self):
+    def boundingRect(self: Self) -> QtCore.QRectF:
         return QtCore.QRectF(0.0, 0.0,
                              self._width + PortEnum.CLICK_FALLOFF.value,
                              self._height)
 
-    def paint(self, painter, option, widget):
+    def paint(self: Self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem | None, widget: QtWidgets.QWidget | None = None) -> None:
         """
         Draws the circular port.
 
@@ -182,80 +182,81 @@ class PortItem(QtWidgets.QGraphicsItem):
         # painter.drawRect(self.boundingRect())
         # ----------------------------------------------------------------------
 
-        rect_w = self._width / 1.8
-        rect_h = self._height / 1.8
-        rect_x = self.boundingRect().center().x() - (rect_w / 2)
-        rect_y = self.boundingRect().center().y() - (rect_h / 2)
+        rect_w: float = self._width / 1.8
+        rect_h: float = self._height / 1.8
+        rect_x: float = self.boundingRect().center().x() - (rect_w / 2)
+        rect_y: float = self.boundingRect().center().y() - (rect_h / 2)
         port_rect = QtCore.QRectF(rect_x, rect_y, rect_w, rect_h)
 
         if self._hovered:
-            color = QtGui.QColor(*PortEnum.HOVER_COLOR.value)
-            border_color = QtGui.QColor(*PortEnum.HOVER_BORDER_COLOR.value)
+            color: QtGui.QColor = QtGui.QColor(*PortEnum.HOVER_COLOR.value)
+            border_color: QtGui.QColor = QtGui.QColor(*PortEnum.HOVER_BORDER_COLOR.value)
         elif self.connected_pipes:
-            color = QtGui.QColor(*PortEnum.ACTIVE_COLOR.value)
-            border_color = QtGui.QColor(*PortEnum.ACTIVE_BORDER_COLOR.value)
+            color: QtGui.QColor = QtGui.QColor(*PortEnum.ACTIVE_COLOR.value)
+            border_color: QtGui.QColor = QtGui.QColor(*PortEnum.ACTIVE_BORDER_COLOR.value)
         else:
-            color = QtGui.QColor(*self.color)
-            border_color = QtGui.QColor(*self.border_color)
+            color: QtGui.QColor = QtGui.QColor(*self.color)
+            border_color: QtGui.QColor = QtGui.QColor(*self.border_color)
 
-        pen = QtGui.QPen(border_color, 1.8)
+        pen: QtGui.QPen = QtGui.QPen(border_color, 1.8)
         painter.setPen(pen)
         painter.setBrush(color)
         painter.drawEllipse(port_rect)
 
         if self.connected_pipes and not self._hovered:
             painter.setBrush(border_color)
-            w = port_rect.width() / 2.5
-            h = port_rect.height() / 2.5
-            rect = QtCore.QRectF(port_rect.center().x() - w / 2,
+            w: float = port_rect.width() / 2.5
+            h: float = port_rect.height() / 2.5
+            rect: QtCore.QRectF = QtCore.QRectF(port_rect.center().x() - w / 2,
                                  port_rect.center().y() - h / 2,
                                  w, h)
             border_color = QtGui.QColor(*self.border_color)
-            pen = QtGui.QPen(border_color, 1.6)
+            pen: QtGui.QPen = QtGui.QPen(border_color, 1.6)
             painter.setPen(pen)
             painter.setBrush(border_color)
             painter.drawEllipse(rect)
         elif self._hovered:
             if self.multi_connection:
-                pen = QtGui.QPen(border_color, 1.4)
+                pen: QtGui.QPen = QtGui.QPen(border_color, 1.4)
                 painter.setPen(pen)
                 painter.setBrush(color)
-                w = port_rect.width() / 1.8
-                h = port_rect.height() / 1.8
+                w: float = port_rect.width() / 1.8
+                h: float = port_rect.height() / 1.8
             else:
                 painter.setBrush(border_color)
-                w = port_rect.width() / 3.5
-                h = port_rect.height() / 3.5
-            rect = QtCore.QRectF(port_rect.center().x() - w / 2,
+                w: float = port_rect.width() / 3.5
+                h: float = port_rect.height() / 3.5
+            rect: QtCore.QRectF = QtCore.QRectF(port_rect.center().x() - w / 2,
                                  port_rect.center().y() - h / 2,
                                  w, h)
             painter.drawEllipse(rect)
         painter.restore()
 
-    def itemChange(self, change, value):
-        if change == self.GraphicsItemChange.ItemScenePositionHasChanged:
+    def itemChange(self: Self, change: QtWidgets.QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
+        if change == QtWidgets.QGraphicsItem.GraphicsItemChange.ItemScenePositionHasChanged:
             self.redraw_connected_pipes()
         return super(PortItem, self).itemChange(change, value)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self: Self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         super(PortItem, self).mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self: Self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
         super(PortItem, self).mouseReleaseEvent(event)
 
-    def hoverEnterEvent(self, event):
+    def hoverEnterEvent(self: Self, event: QtWidgets.QGraphicsSceneHoverEvent) -> None:
         self._hovered = True
         super(PortItem, self).hoverEnterEvent(event)
 
-    def hoverLeaveEvent(self, event):
+    def hoverLeaveEvent(self: Self, event: QtWidgets.QGraphicsSceneHoverEvent) -> None:
         self._hovered = False
         super(PortItem, self).hoverLeaveEvent(event)
 
-    def viewer_start_connection(self):
-        viewer = self.scene().viewer()
-        viewer.start_live_connection(self)
+    def viewer_start_connection(self: Self) -> None:
+        views: list[QtWidgets.QGraphicsView] = self.scene().views()
+        for viewer in views:
+            viewer.start_live_connection(self)
 
-    def redraw_connected_pipes(self):
+    def redraw_connected_pipes(self: Self) -> None:
         if not self.connected_pipes:
             return
         for pipe in self.connected_pipes:

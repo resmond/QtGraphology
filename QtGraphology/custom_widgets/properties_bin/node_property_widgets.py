@@ -13,10 +13,9 @@ from .node_property_factory import NodePropertyWidgetFactory
 from .prop_widgets_base import PropLineEdit
 from ...constants import NodePropWidgetEnum
 
-
 class _PropertiesDelegate(QtWidgets.QStyledItemDelegate):
 
-    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem,
+    def paint(self: Self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionViewItem,
               index: QtCore.QModelIndex | QtCore.QPersistentModelIndex, /) -> None:
         """
         Args:
@@ -55,7 +54,7 @@ class _PropertiesDelegate(QtWidgets.QStyledItemDelegate):
 
 class _PropertiesList(QtWidgets.QTableWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self : Self, parent=None) -> None:
         super(_PropertiesList, self).__init__(parent)
         self.setItemDelegate(_PropertiesDelegate())
         self.setColumnCount(1)
@@ -76,7 +75,7 @@ class _PropertiesList(QtWidgets.QTableWidget):
             QtWidgets.QAbstractItemView.ScrollMode.ScrollPerPixel
         )
 
-    def wheelEvent(self, event):
+    def wheelEvent(self: Self, event) -> None:
         """
         Args:
             event (QtGui.QWheelEvent):
@@ -93,7 +92,7 @@ class _PropertiesContainer(QtWidgets.QWidget):
     a tab in the ``NodePropWidget`` widget.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self: Self, parent=None) -> None:
         super(_PropertiesContainer, self).__init__(parent)
         self.__layout = QtWidgets.QGridLayout()
         self.__layout.setColumnStretch(1, 1)
@@ -103,12 +102,10 @@ class _PropertiesContainer(QtWidgets.QWidget):
         layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         layout.addLayout(self.__layout)
 
-    def __repr__(self):
-        return '<{} object at {}>'.format(
-            self.__class__.__name__, hex(id(self))
-        )
+    def __repr__(self: Self) -> str:
+        return f'<{self.__class__.__name__} object at {hex(id(self))}>'
 
-    def add_widget(self, name, widget, value, label=None, tooltip=None):
+    def add_widget(self: Self, name: str, widget: QtWidgets.QWidget, value: Any, label: str = '', tooltip: str = '') -> None:
         """
         Add a property widget to the window.
 
@@ -138,7 +135,7 @@ class _PropertiesContainer(QtWidgets.QWidget):
         self.__layout.addWidget(QtWidgets.QLabel(label), row, 0, label_flags)
         self.__layout.addWidget(widget, row, 1)
 
-    def get_widget(self, name):
+    def get_widget(self: Self, name: str) -> QtWidgets.QWidget | None:
         """
         Returns the property widget from the name.
 
@@ -153,14 +150,14 @@ class _PropertiesContainer(QtWidgets.QWidget):
             if item and name == item.widget().toolTip():
                 return item.widget()
 
-    def get_all_widgets(self):
+    def get_all_widgets(self: Self) -> dict[str, QtWidgets.QWidget]:
         """
         Returns the node property widgets.
 
         Returns:
             dict: {name: widget}
         """
-        widgets = {}
+        widgets: dict[str, QtWidgets.QWidget] = {}
         for row in range(self.__layout.rowCount()):
             item = self.__layout.itemAtPosition(row, 1)
             if not item:
@@ -169,14 +166,13 @@ class _PropertiesContainer(QtWidgets.QWidget):
             widgets[name] = item.widget()
         return widgets
 
-
 class _PortConnectionsContainer(QtWidgets.QWidget):
     """
     Port connection container widget that displays node ports and connections
     under a tab in the ``NodePropWidget`` widget.
     """
 
-    def __init__(self, parent=None, node=None):
+    def __init__(self: Self, parent=None, node=None) -> None:
         super(_PortConnectionsContainer, self).__init__(parent)
         self._node = node
         self._ports = {}
@@ -184,6 +180,7 @@ class _PortConnectionsContainer(QtWidgets.QWidget):
         self.input_group, self.input_tree = self._build_tree_group(
             'Input Ports'
         )
+
         self.input_group.setToolTip('Display input port connections')
         for _, port in node.inputs().items():
             self._build_row(self.input_tree, port)
@@ -209,13 +206,11 @@ class _PortConnectionsContainer(QtWidgets.QWidget):
         self.output_group.setChecked(False)
         self.output_tree.setVisible(False)
 
-    def __repr__(self):
-        return '<{} object at {}>'.format(
-            self.__class__.__name__, hex(id(self))
-        )
+    def __repr__(self: Self) -> str:
+        return f'<{self.__class__.__name__} object at {hex(id(self))}>'
 
     @staticmethod
-    def _build_tree_group(title):
+    def _build_tree_group(title: str) -> tuple[QtWidgets.QGroupBox, QtWidgets.QTreeWidget]:
         """
         Build the ports group box and ports tree widget.
 
@@ -246,7 +241,7 @@ class _PortConnectionsContainer(QtWidgets.QWidget):
 
         return group_box, tree_widget
 
-    def _build_row(self, tree, port):
+    def _build_row(self: Self, tree: QtWidgets.QTreeWidget, port: QtGraphology.Port):
         """
         Builds a new row in the parent ports tree widget.
 
@@ -254,7 +249,7 @@ class _PortConnectionsContainer(QtWidgets.QWidget):
             tree (QtWidgets.QTreeWidget): parent port tree widget.
             port (QtGraphology.Port): port object.
         """
-        item = QtWidgets.QTreeWidgetItem(tree)
+        item: QtWidgets.QTreeWidgetItem = QtWidgets.QTreeWidgetItem(tree)
         # FIXME: TypeError: unsupported operand type(s) for &: 'ItemFlag' and 'GraphicsItemFlag'
         #  although I'm unsure how QTreeWidgetItem flags is related with QGraphicsItem flags... probably
         #  can safely remove this line in future updates
@@ -267,19 +262,19 @@ class _PortConnectionsContainer(QtWidgets.QWidget):
 
         # TODO: will need to update this checkbox lock logic to work with
         #       the undo/redo functionality.
-        lock_chb = CustomCheckBox()
+        lock_chb: CustomCheckBox = CustomCheckBox()
         lock_chb.setChecked(port.locked())
         lock_chb.clicked.connect(lambda x: port.set_locked(x))
         tree.setItemWidget(item, 0, lock_chb)
 
-        combo = QtWidgets.QComboBox()
+        combo: QtWidgets.QComboBox = QtWidgets.QComboBox()
         for cp in port.connected_ports():
             item_name = '{} : "{}"'.format(cp.name(), cp.node().name())
             self._ports[item_name] = cp
             combo.addItem(item_name)
         tree.setItemWidget(item, 2, combo)
 
-        focus_btn = QtWidgets.QPushButton()
+        focus_btn: QtWidgets.QPushButton = QtWidgets.QPushButton()
         focus_btn.setIcon(QtGui.QIcon(
             tree.style().standardPixmap(QtWidgets.QStyle.StandardPixmap.SP_DialogYesButton)
         ))
@@ -288,7 +283,7 @@ class _PortConnectionsContainer(QtWidgets.QWidget):
         )
         tree.setItemWidget(item, 3, focus_btn)
 
-    def _on_focus_to_node(self, port):
+    def _on_focus_to_node(self: Self, port: QtGraphology.Port):
         """
         Slot function emits the node is of the connected port.
 
@@ -301,7 +296,7 @@ class _PortConnectionsContainer(QtWidgets.QWidget):
             node.graph.clear_selection()
             node.set_selected(True)
 
-    def set_lock_controls_disable(self, disable=False):
+    def set_lock_controls_disable(self: Self, disable: bool=False) -> None:
         """
         Enable/Disable port lock column widgets.
 
@@ -331,13 +326,13 @@ class NodePropEditorWidget(QtWidgets.QWidget):
     property_changed = QtCore.Signal(str, str, object)
     property_closed = QtCore.Signal(str)
 
-    def __init__(self, parent=None, node=None):
+    def __init__(self: Self, parent=None, node=None) -> None:
         super().__init__(parent)
         self.__node_id = node.id
         self.__tab_windows = {}
         self.__tab = QtWidgets.QTabWidget()
 
-        close_btn = QtWidgets.QPushButton()
+        close_btn: QtWidgets.QPushButton = QtWidgets.QPushButton()
         close_btn.setIcon(QtGui.QIcon(
             self.style().standardPixmap(
                 QtWidgets.QStyle.StandardPixmap.SP_DialogCancelButton
@@ -375,18 +370,16 @@ class NodePropEditorWidget(QtWidgets.QWidget):
 
         self._port_connections = self._read_node(node)
 
-    def __repr__(self):
-        return '<{} object at {}>'.format(
-            self.__class__.__name__, hex(id(self))
-        )
+    def __repr__(self: Self) -> str:
+        return f'<{self.__class__.__name__} object at {hex(id(self))}>'
 
-    def _on_close(self):
+    def _on_close(self: Self) -> None:
         """
         called by the close button.
         """
         self.property_closed.emit(self.__node_id)
 
-    def _on_property_changed(self, name, value):
+    def _on_property_changed(self: Self, name: str, value: object) -> None:
         """
         slot function called when a property widget has changed.
 
@@ -396,7 +389,7 @@ class NodePropEditorWidget(QtWidgets.QWidget):
         """
         self.property_changed.emit(self.__node_id, name, value)
 
-    def _read_node(self, node):
+    def _read_node(self: Self, node: QtGraphology.BaseNode) -> _PortConnectionsContainer:
         """
         Populate widget from a node.
 
@@ -517,7 +510,7 @@ class NodePropEditorWidget(QtWidgets.QWidget):
 
         return ports_container
 
-    def node_id(self):
+    def node_id(self: Self) -> str:
         """
         Returns the node id linked to the widget.
 
@@ -526,7 +519,7 @@ class NodePropEditorWidget(QtWidgets.QWidget):
         """
         return self.__node_id
 
-    def add_widget(self, name, widget, tab='Properties'):
+    def add_widget(self, name: str, widget: BaseProperty, tab: str = 'Properties') -> None:
         """
         add new node property widget.
 
@@ -541,7 +534,7 @@ class NodePropEditorWidget(QtWidgets.QWidget):
         window.add_widget(name, widget)
         widget.value_changed.connect(self._on_property_changed)
 
-    def add_tab(self, name):
+    def add_tab(self: Self, name: str) -> PropListWidget:
         """
         add a new tab.
 
@@ -557,7 +550,7 @@ class NodePropEditorWidget(QtWidgets.QWidget):
         self.__tab.addTab(self.__tab_windows[name], name)
         return self.__tab_windows[name]
 
-    def get_tab_widget(self):
+    def get_tab_widget(self: Self) -> QtWidgets.QTabWidget:
         """
         Returns the underlying tab widget.
 
@@ -566,7 +559,7 @@ class NodePropEditorWidget(QtWidgets.QWidget):
         """
         return self.__tab
 
-    def get_widget(self, name: str):
+    def get_widget(self: Self, name: str) -> QtGraphology.custom_widgets.properties_bin.prop_widgets_abstract.BaseProperty:
         """
         get property widget.
 
@@ -583,7 +576,7 @@ class NodePropEditorWidget(QtWidgets.QWidget):
             if widget:
                 return widget
 
-    def get_port_connection_widget(self):
+    def get_port_connection_widget(self: Self) -> _PortConnectionsContainer:
         """
         Returns the ports connections container widget.
 
@@ -592,7 +585,7 @@ class NodePropEditorWidget(QtWidgets.QWidget):
         """
         return self._port_connections
 
-    def set_port_lock_widgets_disabled(self, disabled=True):
+    def set_port_lock_widgets_disabled(self: Self, disabled: bool = True) -> None:
         """
         Enable/Disable port lock column widgets.
 
@@ -638,7 +631,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
     #: Signal emitted (node_id, prop_name, prop_value)
     property_changed = QtCore.Signal(str, str, object)
 
-    def __init__(self, parent=None, node_graph=None):
+    def __init__(self: Self, parent=None, node_graph=None) -> None:
         super(PropertiesBinWidget, self).__init__(parent)
         self.setWindowTitle('Properties Bin')
         self._prop_list = _PropertiesList()
@@ -682,12 +675,10 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         node_graph.nodes_deleted.connect(self.__on_nodes_deleted)
         node_graph.property_changed.connect(self.__on_graph_property_changed)
 
-    def __repr__(self):
-        return '<{} object at {}>'.format(
-            self.__class__.__name__, hex(id(self))
-        )
+    def __repr__(self: Self) -> str:
+        return f'<{self.__class__.__name__} object at {hex(id(self))}>'
 
-    def __on_port_tree_visible_changed(self, node_id, visible, tree_widget):
+    def __on_port_tree_visible_changed(self: Self, node_id: str, visible: bool, tree_widget: QtWidgets.QTreeWidget):
         """
         Triggered when the visibility of the port tree widget changes we
         resize the property list table row.
@@ -697,7 +688,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
             visible (bool): visibility state.
             tree_widget (QtWidgets.QTreeWidget): ports tree widget.
         """
-        items = self._prop_list.findItems(node_id, QtCore.Qt.MatchFlag.MatchExactly)
+        items: list[QtWidgets.QTableWidgetItem] = self._prop_list.findItems(node_id, QtCore.Qt.MatchFlag.MatchExactly)
         if items:
             tree_widget.setVisible(visible)
             widget = self._prop_list.cellWidget(items[0].row(), 0)
@@ -707,7 +698,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
                 QtWidgets.QHeaderView.ResizeMode.ResizeToContents
             )
 
-    def __on_prop_close(self, node_id):
+    def __on_prop_close(self: Self, node_id: str) -> None:
         """
         Triggered when a node property widget is requested to be removed from
         the property list widget.
@@ -718,7 +709,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         items = self._prop_list.findItems(node_id, QtCore.Qt.MatchFlag.MatchExactly)
         [self._prop_list.removeRow(i.row()) for i in items]
 
-    def __on_limit_changed(self, value):
+    def __on_limit_changed(self: Self, value: int) -> None:
         """
         Sets the property list widget limit.
 
@@ -729,7 +720,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         if rows > value:
             self._prop_list.removeRow(rows - 1)
 
-    def __on_nodes_deleted(self, nodes):
+    def __on_nodes_deleted(self: Self, nodes: list[str]) -> None:
         """
         Slot function when a node has been deleted.
 
@@ -738,7 +729,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         """
         [self.__on_prop_close(n) for n in nodes]
 
-    def __on_graph_property_changed(self, node, prop_name, prop_value):
+    def __on_graph_property_changed(self: Self, node: QtGraphology.NodeObject, prop_name: str, prop_value: object) -> None:
         """
         Slot function that updates the property bin from the node graph signal.
 
@@ -758,7 +749,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
             property_widget.set_value(prop_value)
             self._block_signal = False
 
-    def __on_property_widget_changed(self, node_id, prop_name, prop_value):
+    def __on_property_widget_changed(self: Self, node_id: str, prop_name: str, prop_value: object) -> None:
         """
         Slot function triggered when a property widget value has changed.
 
@@ -770,7 +761,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         if not self._block_signal:
             self.property_changed.emit(node_id, prop_name, prop_value)
 
-    def create_property_editor(self, node):
+    def create_property_editor(self: Self, node: QtGraphology.NodeObject) -> NodePropEditorWidget:
         """
         Creates a new property editor widget from the provided node.
 
@@ -784,7 +775,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         """
         return NodePropEditorWidget(node=node)
 
-    def limit(self):
+    def limit(self: Self) -> int:
         """
         Returns the limit for how many nodes can be loaded into the bin.
 
@@ -793,7 +784,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         """
         return int(self._limit.value())
 
-    def set_limit(self, limit):
+    def set_limit(self: Self, limit: int) -> None:
         """
         Set limit of nodes to display.
 
@@ -802,7 +793,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         """
         self._limit.setValue(limit)
 
-    def add_node(self, node):
+    def add_node(self: Self, node: QtGraphology.NodeObject) -> None:
         """
         Add node to the properties bin.
 
@@ -844,7 +835,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         self._prop_list.setItem(0, 0, item)
         self._prop_list.selectRow(0)
 
-    def remove_node(self, node):
+    def remove_node(self: Self, node: str | QtGraphology.BaseNode) -> None:
         """
         Remove node from the properties bin.
 
@@ -854,7 +845,7 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         node_id = node if isinstance(node, str) else node.id
         self.__on_prop_close(node_id)
 
-    def lock_bin(self):
+    def lock_bin(self: Self) -> None:
         """
         Lock/UnLock the properties bin.
         """
@@ -864,13 +855,13 @@ class PropertiesBinWidget(QtWidgets.QWidget):
         else:
             self._btn_lock.setText('Lock')
 
-    def clear_bin(self):
+    def clear_bin(self: Self) -> None:
         """
         Clear the properties bin.
         """
         self._prop_list.setRowCount(0)
 
-    def prop_widget(self, node):
+    def prop_widget(self: Self, node) -> NodePropEditorWidget:
         """
         Returns the node property widget.
 

@@ -52,7 +52,6 @@ class PortModel(object):
         props['connected_ports'] = dict(props.pop('connected_ports'))
         return props
 
-
 class NodeModel(object):
     """
     Data dump for a node object.
@@ -469,7 +468,6 @@ class NodeModel(object):
         model_dict: dict[str, Any] = self.to_dict
         return json.dumps(model_dict)
 
-
 class NodeGraphModel(object):
     """
     Data dump for a node graph.
@@ -650,7 +648,6 @@ class NodeGraphModel(object):
         data: dict[str, Any] = self.reject_connection_types.get(node_type) or {}
         rejected_types: dict[str, Any] = data.get(port_type) or {}
         return rejected_types.get(port_name) or {}
-
 
 if __name__ == '__main__':
     p = PortModel(None)

@@ -14,9 +14,7 @@ class TSDGraph(TypedDict):
     accept_connection_types: dict
     reject_connection_types: dict
 
-
 T_PORTS = dict[str, dict[str, list[str]]]
-
 
 class TSDNode(TypedDict):
     pos: tuple[int, int]  # Actually tuple[int, int]
@@ -38,7 +36,6 @@ class TSDNode(TypedDict):
     subgraph_session: dict
     port_deletion_allowed: bool
 
-
 TSDConnections = TypedDict(
     "TSDConnections",
     {
@@ -46,7 +43,6 @@ TSDConnections = TypedDict(
         "out": tuple[int,int],  # tuple[int, int]
     }
 )
-
 
 class TSerializedData(TypedDict):
     graph: TSDGraph

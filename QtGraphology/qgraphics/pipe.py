@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self, Any
 
 import math
 
@@ -15,7 +15,9 @@ from QtGraphology.constants import (
     Z_VAL_PIPE,
     Z_VAL_NODE_WIDGET
 )
-from QtGraphology.qgraphics.port import PortItem
+
+if TYPE_CHECKING:
+    from QtGraphology.qgraphics.pipe import PortItem
 
 PIPE_STYLES = {
     PipeEnum.DRAW_TYPE_DEFAULT.value: QtCore.Qt.PenStyle.SolidLine,
@@ -29,52 +31,52 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
     Base Pipe item used for drawing node connections.
     """
 
-    def __init__(self, input_port=None, output_port=None):
+    def __init__(self: Self, input_port: 'PortItem' | None = None, output_port: 'PortItem' | None = None) -> None: # type: ignore
         super(PipeItem, self).__init__()
         self.setZValue(Z_VAL_PIPE)
         self.setAcceptHoverEvents(True)
         self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         self.setCacheMode(ITEM_CACHE_MODE)
 
-        self._color = PipeEnum.COLOR.value
-        self._style = PipeEnum.DRAW_TYPE_DEFAULT.value
-        self._active = False
-        self._highlight = False
-        self._input_port = input_port
-        self._output_port = output_port
+        self._color: PipeEnum = PipeEnum.COLOR
+        self._style: PipeEnum = PipeEnum.DRAW_TYPE_DEFAULT
+        self._active: bool = False
+        self._highlight: bool = False
+        self._input_port: 'PortItem' | None = input_port # type: ignore
+        self._output_port: 'PortItem' | None = output_port # type: ignore
 
-        size = 6.0
-        self._poly = QtGui.QPolygonF()
+        size: float = 6.0
+        self._poly: QtGui.QPolygonF = QtGui.QPolygonF()
         self._poly.append(QtCore.QPointF(-size, size))
         self._poly.append(QtCore.QPointF(0.0, -size * 1.5))
         self._poly.append(QtCore.QPointF(size, size))
 
-        self._dir_pointer = QtWidgets.QGraphicsPolygonItem(self)
+        self._dir_pointer: QtWidgets.QGraphicsPolygonItem = QtWidgets.QGraphicsPolygonItem(self)
         self._dir_pointer.setPolygon(self._poly)
-        self._dir_pointer.setFlag(self.GraphicsItemFlag.ItemIsSelectable, False)
+        self._dir_pointer.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
 
         self.reset()
 
-    def __repr__(self):
-        in_name = self._input_port.name if self._input_port else ''
-        out_name = self._output_port.name if self._output_port else ''
+    def __repr__(self: Self) -> str:
+        in_name: str = self._input_port.name if self._input_port else ''
+        out_name: str = self._output_port.name if self._output_port else ''
         return '{}.Pipe(\'{}\', \'{}\')'.format(
             self.__module__, in_name, out_name)
 
-    def hoverEnterEvent(self, event):
+    def hoverEnterEvent(self: Self, event) -> None:
         self.activate()
 
-    def hoverLeaveEvent(self, event):
+    def hoverLeaveEvent(self: Self, event) -> None:
         self.reset()
-        if self.input_port and self.output_port:
-            if self.input_port.node.selected:
+        if self._input_port and self._output_port:
+            if self._input_port.node.selected:
                 self.highlight()
-            elif self.output_port.node.selected:
+            elif self._output_port.node.selected:
                 self.highlight()
         if self.isSelected():
             self.highlight()
 
-    def itemChange(self, change, value):
+    def itemChange(self, change: Any, value: Any) -> Any:
         if change == self.GraphicsItemChange.ItemSelectedChange and self.scene():
             if value:
                 self.highlight()
@@ -82,7 +84,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
                 self.reset()
         return super(PipeItem, self).itemChange(change, value)
 
-    def paint(self, painter, option, widget):
+    def paint(self: Self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem | None, widget: QtWidgets.QWidget | None = None) -> None:
         """
         Draws the connection line between nodes.
 
@@ -97,8 +99,10 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         pen = self.pen()
         if self.disabled():
             if not self._active:
+                pen_style = PIPE_STYLES.get(PipeEnum.DRAW_TYPE_DOTTED.value)
                 pen.setColor(QtGui.QColor(*PipeEnum.DISABLED_COLOR.value))
-                pen.setStyle(PIPE_STYLES.get(PipeEnum.DRAW_TYPE_DOTTED.value))
+                if pen_style:
+                    pen.setStyle(pen_style)
                 pen.setWidth(3)
 
         painter.setPen(pen)
@@ -110,39 +114,39 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         painter.restore()
 
     @staticmethod
-    def _calc_distance(p1, p2):
+    def _calc_distance(p1: QtCore.QPointF, p2: QtCore.QPointF) -> float:
         x = math.pow((p2.x() - p1.x()), 2)
         y = math.pow((p2.y() - p1.y()), 2)
         return math.sqrt(x + y)
 
-    def _draw_direction_pointer(self):
+    def _draw_direction_pointer(self: Self) -> None:
         """
         updates the pipe direction pointer arrow.
         """
-        if not (self.input_port and self.output_port):
+        if not (self._input_port and self._output_port):
             self._dir_pointer.setVisible(False)
             return
 
         if self.disabled():
             if not (self._active or self._highlight):
-                color = QtGui.QColor(*PipeEnum.DISABLED_COLOR.value)
-                pen = self._dir_pointer.pen()
+                color: QtGui.QColor = QtGui.QColor(*PipeEnum.DISABLED_COLOR.value)
+                pen: QtGui.QPen = self._dir_pointer.pen()
                 pen.setColor(color)
                 self._dir_pointer.setPen(pen)
                 self._dir_pointer.setBrush(color.darker(200))
 
         self._dir_pointer.setVisible(True)
-        loc_pt = self.path().pointAtPercent(0.49)
-        tgt_pt = self.path().pointAtPercent(0.51)
+        loc_pt: QtCore.QPointF = self.path().pointAtPercent(0.49)
+        tgt_pt: QtCore.QPointF = self.path().pointAtPercent(0.51)
         radians = math.atan2(tgt_pt.y() - loc_pt.y(),
                              tgt_pt.x() - loc_pt.x())
         degrees = math.degrees(radians) - 90
         self._dir_pointer.setRotation(degrees)
         self._dir_pointer.setPos(self.path().pointAtPercent(0.5))
 
-        cen_x = self.path().pointAtPercent(0.5).x()
-        cen_y = self.path().pointAtPercent(0.5).y()
-        dist = math.hypot(tgt_pt.x() - cen_x, tgt_pt.y() - cen_y)
+        cen_x: float = self.path().pointAtPercent(0.5).x()
+        cen_y: float = self.path().pointAtPercent(0.5).y()
+        dist: float = math.hypot(tgt_pt.x() - cen_x, tgt_pt.y() - cen_y)
 
         self._dir_pointer.setVisible(True)
         if dist < 0.3:
@@ -151,7 +155,7 @@ class PipeItem(QtWidgets.QGraphicsPathItem):
         if dist < 1.0:
             self._dir_pointer.setScale(dist)
 
-    def _draw_path_cycled_vertical(self, start_port, pos1, pos2, path):
+    def _draw_path_cycled_vertical(self: Self, start_port: 'PortItem', pos1: QtCore.QPointF, pos2: QtCore.QPointF, path: QtGui.QPainterPath) -> None: # type: ignore
         """
         Draw pipe vertically around node if connection is cyclic.
 

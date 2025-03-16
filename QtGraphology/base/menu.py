@@ -11,7 +11,6 @@ from PySide6 import QtGui, QtCore
 from QtGraphology.errors import NodeMenuError
 from QtGraphology.widgets.actions import BaseMenu, GraphAction, NodeAction
 
-
 class NodeGraphMenu(object):
     """
     The ``NodeGraphMenu`` is the main context menu triggered from the node graph.
@@ -172,7 +171,6 @@ class NodeGraphMenu(object):
         self.qmenu.addSeparator()
         self._items.append(None)
 
-
 class NodesMenu(NodeGraphMenu):
     """
     The ``NodesMenu`` is the context menu triggered from a node.
@@ -249,7 +247,6 @@ class NodesMenu(NodeGraphMenu):
         self._commands[name] = command
         self._items.append(command)
         return command
-
 
 class NodeGraphCommand(object):
     """

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Sequence
 
 import math
 # distutils.version is deprecated and will be removed in Python 3.12
@@ -55,11 +55,11 @@ class NodeViewer(QtWidgets.QGraphicsView):
     node_backdrop_updated = QtCore.Signal(str, str, object)
 
     # pass through signals that are translated into "NodeGraph()" signals.
-    node_selected = QtCore.Signal(str)
-    node_selection_changed = QtCore.Signal(list, list)
-    node_double_clicked = QtCore.Signal(str)
-    data_dropped = QtCore.Signal(QtCore.QMimeData, QtCore.QPoint)
-    context_menu_prompt = QtCore.Signal(str, object)
+    node_selected: QtCore.Signal = QtCore.Signal(str)
+    node_selection_changed: QtCore.Signal = QtCore.Signal(list, list)
+    node_double_clicked: QtCore.Signal = QtCore.Signal(str)
+    data_dropped: QtCore.Signal = QtCore.Signal(QtCore.QMimeData, QtCore.QPoint)
+    context_menu_prompt: QtCore.Signal = QtCore.Signal(str, object)
 
     def __init__(self: Self,
                  parent: QWidget | None = None,
@@ -91,36 +91,40 @@ class NodeViewer(QtWidgets.QGraphicsView):
             "text/uri-list",
         ]
 
-        self._scene_range = QtCore.QRectF(
+        self._scene_range: QtCore.QRectF = QtCore.QRectF(
             0, 0,
             self.size().width(), self.size().height(),
         )
         self._update_scene()
-        self._last_size = self.size()
+        self._last_size: QtCore.QSize = self.size()
 
-        self._layout_direction = LayoutDirectionEnum.HORIZONTAL
+        self._layout_direction: LayoutDirectionEnum = LayoutDirectionEnum.HORIZONTAL
 
-        self._pipe_layout = PipeLayoutEnum.CURVED
-        self._detached_port = None
+        self._pipe_layout: PipeLayoutEnum = PipeLayoutEnum.CURVED
+        self._detached_port: PortItem | None = None
         self._start_port: PortItem | None = None
-        self._origin_pos = None
-        self._previous_pos = QtCore.QPoint(
+        self._origin_pos: QtCore.QPoint | None = None
+        self._previous_pos: QtCore.QPoint = QtCore.QPoint(
             int(self.width() / 2),
             int(self.height() / 2),
         )
-        self._prev_selection_nodes: list[Any]= []
-        self._prev_selection_pipes = []
-        self._node_positions = {}
+        self._prev_selection_nodes: list[Any] = []
+        self._prev_selection_pipes: list[Any] = []
+        self._node_positions: dict[str, QtCore.QPoint] = {}
 
-        self._ctx_graph_menu = BaseMenu('NodeGraph', self)
-        self._ctx_node_menu = BaseMenu('Nodes', self)
+        self._rubber_band: QRubberBand = QRubberBand(QRubberBand.Shape.Rectangle, self)
+        self._rubber_band_active: bool  = False
 
-        text_color = QtGui.QColor(*tuple(map(
+#       this is different than Oden
+        self._ctx_graph_menu: BaseMenu = BaseMenu('NodeGraph', self)
+        self._ctx_node_menu: BaseMenu = BaseMenu('Nodes', self)
+
+        text_color: QtGui.QColor = QtGui.QColor(*tuple(map(
             lambda i, j: i - j, (255, 255, 255),
             ViewerEnum.BACKGROUND_COLOR.value
         )))
         text_color.setAlpha(50)
-        self._cursor_text = QtWidgets.QGraphicsTextItem()
+        self._cursor_text: QtWidgets.QGraphicsTextItem = QtWidgets.QGraphicsTextItem()
         self._cursor_text.setFlag(self._cursor_text.GraphicsItemFlag.ItemIsSelectable, enabled=False)
         self._cursor_text.setDefaultTextColor(text_color)
         self._cursor_text.setZValue(Z_VAL_PIPE - 1)
@@ -129,58 +133,58 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self._cursor_text.setFont(font)
         self.scene().addItem(self._cursor_text)
 
-        self._LIVE_PIPE = LivePipeItem()
+        self._LIVE_PIPE: LivePipeItem = LivePipeItem()
         self._LIVE_PIPE.setVisible(False)
         self.scene().addItem(self._LIVE_PIPE)
 
-        self._SLICER_PIPE = SlicerPipeItem()
+        self._SLICER_PIPE: SlicerPipeItem = SlicerPipeItem()
         self._SLICER_PIPE.setVisible(False)
         self.scene().addItem(self._SLICER_PIPE)
 
-        self._search_widget = TabSearchMenuWidget()
+        self._search_widget: TabSearchMenuWidget = TabSearchMenuWidget()
         self._search_widget.search_submitted.connect(self._on_search_submitted)
 
         # workaround fix for shortcuts from the non-native menu.
         # actions don't seem to trigger so we create a hidden menu bar.
-        self._ctx_menu_bar = QtWidgets.QMenuBar(parent=self)
+        self._ctx_menu_bar: QtWidgets.QMenuBar = QtWidgets.QMenuBar(parent=self)
         self._ctx_menu_bar.setNativeMenuBar(False)
         # shortcuts don't work with "setVisibility(False)".
         self._ctx_menu_bar.setMaximumSize(0, 0)
 
         # context menus.
-        self._ctx_graph_menu = BaseMenu('NodeGraph', self)
-        self._ctx_node_menu = BaseMenu('Nodes', self)
+        self._ctx_graph_menu: BaseMenu = BaseMenu('NodeGraph', self)
+        self._ctx_node_menu: BaseMenu = BaseMenu('Nodes', self)
 
         if undo_stack:
-            self._undo_action: QtGui.QAction = undo_stack.createUndoAction(self, prefix='&Undo')
-            self._redo_action: QtGui.QAction = undo_stack.createRedoAction(self, prefix='&Redo')
+            self._undo_action: QtGui.QAction | None = undo_stack.createUndoAction(self, prefix='&Undo')
+            self._redo_action: QtGui.QAction | None = undo_stack.createRedoAction(self, prefix='&Redo')
         else:
-            self._undo_action = None
-            self._redo_action = None
+            self._undo_action: QtGui.QAction | None = None
+            self._redo_action: QtGui.QAction | None = None
 
         self._build_context_menus()
 
-        self.acyclic = True
-        self.pipe_collision = False
-        self.pipe_slicing = True
+        self.acyclic: bool = True
+        self.pipe_collision: bool = False
+        self.pipe_slicing: bool = True
 
-        self.LMB_state = False
-        self.RMB_state = False
-        self.MMB_state = False
-        self.ALT_state = False
-        self.CTRL_state = False
-        self.SHIFT_state = False
-        self.COLLIDING_state = False
+        self.LMB_state: bool = False
+        self.RMB_state: bool = False
+        self.MMB_state: bool = False
+        self.ALT_state: bool = False
+        self.CTRL_state: bool = False
+        self.SHIFT_state: bool = False
+        self.COLLIDING_state: bool = False
 
         # connection constrains.
         # TODO: maybe this should be a reference to the graph model instead?
-        self.accept_connection_types = None
-        self.reject_connection_types = None
+        self.accept_connection_types: dict[str, Any] | None = None
+        self.reject_connection_types: dict[str, Any] | None = None
 
         # Text Overlay stuff
         self._text_overlay_align: Literal["left", "center", "right"] = "left"
-        self._text_overlay_size = 40
-        self._text_overlay_spacing = 90
+        self._text_overlay_size: int = 40
+        self._text_overlay_spacing: int = 90
         self._text_overlay: str = ""
 
     def __repr__(self: Self) -> str:
@@ -294,7 +298,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self.setSceneRect(self._scene_range)
         self.fitInView(self._scene_range, QtCore.Qt.AspectRatioMode.KeepAspectRatio)
 
-    def _combined_rect(self: Self, nodes) -> QtCore.QRectF:
+    def _combined_rect(self: Self, nodes: Sequence[QGraphicsItem]) -> QtCore.QRectF:
         """
         Returns a QRectF with the combined size of the provided node items.
 
@@ -309,7 +313,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self.scene().destroyItemGroup(group)
         return rect
 
-    def _items_near(self: Self, pos, item_type=None, width=20, height=20):
+    def _items_near(self: Self, pos: QtCore.QPoint, item_type: type | None = None, width: int = 20, height: int = 20) -> list[QGraphicsItem]:
         """
         Filter node graph items from the specified position, width and
         height area.
@@ -325,8 +329,8 @@ class NodeViewer(QtWidgets.QGraphicsView):
         """
         x, y = pos.x() - width, pos.y() - height
         rect = QtCore.QRectF(x, y, width, height)
-        items = []
-        excl = [self._LIVE_PIPE, self._SLICER_PIPE]
+        items: list[QGraphicsItem] = []
+        excl: list[LivePipeItem | SlicerPipeItem] = [self._LIVE_PIPE, self._SLICER_PIPE]
         for item in self.scene().items(rect):
             if item in excl:
                 continue
@@ -334,7 +338,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 items.append(item)
         return items
 
-    def _on_search_submitted(self: Self, node_type):
+    def _on_search_submitted(self: Self, node_type: str) -> None:
         """
         Slot function triggered when the ``TabSearchMenuWidget`` has
         submitted a search.
@@ -348,19 +352,22 @@ class NodeViewer(QtWidgets.QGraphicsView):
         pos = self.mapToScene(self._previous_pos)
         self.search_triggered.emit(node_type, (pos.x(), pos.y()))
 
-    def _on_pipes_sliced(self: Self, path):
+    def _on_pipes_sliced(self: Self, path: QPainterPath):
         """
         Triggered when the slicer pipe is active
 
         Args:
             path (QtGui.QPainterPath): slicer path.
         """
-        ports = []
-        for i in self.scene().items(path):
+        ports: list[PortItem] = []
+        for i in self.scene().items(path): #i: PipeItem
             if isinstance(i, PipeItem) and i != self._LIVE_PIPE:
-                if any([i.input_port.locked, i.output_port.locked]):
+                if (i.input_port is not None and i.input_port.locked) or (i.output_port is not None and i.output_port.locked):
                     continue
-                ports.append([i.input_port, i.output_port])
+
+                if i.input_port is not None and i.output_port is not None:
+                    ports.append([i.input_port, i.output_port])
+
         self.connection_sliced.emit(ports)
 
     def _draw_text_overlay(
@@ -437,18 +444,18 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self._last_size = self.size()
         super(NodeViewer, self).resizeEvent(event)
 
-    def contextMenuEvent(self: Self, event):
+    def contextMenuEvent(self: Self, event: QtGui.QContextMenuEvent):
         self.RMB_state = False
 
         ctx_menu = None
         ctx_menus = self.context_menus()
 
-        prompted_data = None, None
+        prompted_data: tuple[str, str | None] | None = None
 
         if ctx_menus['nodes'].isEnabled():
             pos = self.mapToScene(self._previous_pos)
             items = self._items_near(pos)
-            nodes = [i for i in items if isinstance(i, AbstractNodeItem)]
+            nodes: list[AbstractNodeItem] = [i for i in items if isinstance(i, AbstractNodeItem)]
             if nodes:
                 node = nodes[0]
                 ctx_menu = ctx_menus['nodes'].get_menu(node.type_, node.id)
@@ -572,7 +579,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             map_rect = self.mapToScene(rect).boundingRect()
             self.scene().update(map_rect)
             self._rubber_band.setGeometry(rect)
-            self._rubber_band.isActive = True
+            self._rubber_band_active = True
 
         # stop here so we don't select a node.
         # (ctrl modifier can be used for something else in future.)
@@ -597,7 +604,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
         if not self._LIVE_PIPE.isVisible():
             super(NodeViewer, self).mousePressEvent(event)
 
-    def mouseReleaseEvent(self: Self, event):
+    def mouseReleaseEvent(self: Self, event: QtGui.QMouseEvent):
         if event.button() == QtCore.Qt.MouseButton.LeftButton:
             self.LMB_state = False
         elif event.button() == QtCore.Qt.MouseButton.RightButton:
@@ -613,14 +620,14 @@ class NodeViewer(QtWidgets.QGraphicsView):
             self._SLICER_PIPE.setVisible(False)
 
         # hide selection marquee
-        if self._rubber_band.isActive:
-            self._rubber_band.isActive = False
+        if self._rubber_band_active:
+            self._rubber_band_active = False
             if self._rubber_band.isVisible():
                 rect = self._rubber_band.rect()
                 map_rect = self.mapToScene(rect).boundingRect()
                 self._rubber_band.hide()
 
-                rect = QtCore.QRect(self._origin_pos, event.pos()).normalized()
+                rect: QtCore.QRect = QtCore.QRect(self._origin_pos, event.pos()).normalized()
                 rect_items = self.scene().items(
                     self.mapToScene(rect).boundingRect()
                 )
@@ -643,8 +650,8 @@ class NodeViewer(QtWidgets.QGraphicsView):
 
         # find position changed nodes and emit signal.
         moved_nodes = {
-            n: xy_pos for n, xy_pos in self._node_positions.items()
-            if n.xy_pos != xy_pos
+            n for n, xy_pos in self._node_positions.items()
+            if isinstance(n, AbstractNodeItem) and hasattr(n, 'xy_pos') and n.xy_pos != xy_pos
         }
         # only emit of node is not colliding with a pipe.
         if moved_nodes and not self.COLLIDING_state:
@@ -693,8 +700,13 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 if not self._LIVE_PIPE.isVisible():
                     self._cursor_text.setPos(self.mapToScene(event.pos()))
 
-        if self.LMB_state and self._rubber_band.isActive:
-            rect = QtCore.QRect(self._origin_pos, event.pos()).normalized()
+        if self.LMB_state and self._rubber_band_active:
+            x1, y1 = self._origin_pos.x(), self._origin_pos.y()
+            x2, y2 = event.pos().x(), event.pos().y()
+            rect = QtCore.QRect(
+                min(x1, x2), min(y1, y2),
+                abs(x2 - x1), abs(y2 - y1)
+            )
             # if the rubber band is too small, do not show it.
             if max(rect.width(), rect.height()) > 5:
                 if not self._rubber_band.isVisible():

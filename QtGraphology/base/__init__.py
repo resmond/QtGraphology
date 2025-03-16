@@ -1,5 +1,8 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING
+#from __future__ import annotations
+#from typing import TYPE_CHECKING
+
+import os
+os.environ['QT_API'] = 'pyside6'
 
 from .commands import *
 from .factory import *

@@ -1,6 +1,6 @@
 Metadata-Version: 2.2
 Name: QtGraphology
-Version: 0.7.4
+Version: 0.1.0
 Summary: Node graph framework for PySide6/PyQt6 that can be implemented and re-purposed into applications.
 Author: Richard Esmond
 Maintainer: Richard Esmond

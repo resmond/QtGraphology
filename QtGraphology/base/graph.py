@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import annotations
+#from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import copy
@@ -14,11 +14,11 @@ import re
 from typing import Self, Any
 
 from QtGraphology.widgets.actions import BaseMenu
+from QtGraphology.qgraphics import PipeItem
 
-os.environ['QT_API'] = 'pyside6'
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from QtGraphology.base.commands import (
+from .commands import (
     NodeAddedCmd,
     NodeMovedCmd,
     NodesRemovedCmd,
@@ -208,10 +208,10 @@ class NodeGraph(QtCore.QObject):
             else:
                 self._model.pipe_style = PipeLayoutEnum.CURVED
         else:
-            self._model = NodeGraphModel()
-            self._undo_stack = QtGui.QUndoStack(parent=self)
-            self._viewer = NodeViewer(undo_stack=self._undo_stack)
-            self._node_factory = NodeFactory()
+            self._model: NodeGraphModel = NodeGraphModel()
+            self._undo_stack: QtGui.QUndoStack = QtGui.QUndoStack(parent=self)
+            self._viewer: NodeViewer = NodeViewer(undo_stack=self._undo_stack)
+            self._node_factory: NodeFactory = NodeFactory()
             self._model.layout_direction = LayoutDirectionEnum.VERTICAL
             self._model.pipe_style = PipeLayoutEnum.CURVED
 
@@ -287,7 +287,7 @@ class NodeGraph(QtCore.QObject):
         menu: BaseMenu | None = self.get_context_menu(menu=menu_name)
         self.context_menu_prompt.emit(menu, node)
 
-    def _on_insert_node(self: Self, pipe: BaseNode, node_id: str, prev_node_pos: dict) -> None:
+    def _on_insert_node(self: Self, pipe: PipeItem, node_id: str, prev_node_pos: dict) -> None:
         """
         Slot function triggered when a selected node has collided with a pipe.
 
@@ -302,7 +302,7 @@ class NodeGraph(QtCore.QObject):
         if not isinstance(node, BaseNode):
             return
 
-        disconnected = [(pipe.input_port, pipe.output_port)]
+        disconnected = [pipe.input_port, pipe.output_port]
         connected = []
 
         if node.input_ports():

@@ -6,7 +6,6 @@ from typing     import Self, Any
 
 from PySide6 import QtWidgets, QtCore
 
-
 class BaseProperty(QtWidgets.QWidget):
     """
     Base class for a custom node property widget to be displayed in the
