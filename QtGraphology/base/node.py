@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from typing import Self, Any
+from xml.etree.ElementTree import QName
 
 from QtGraphology.qgraphics.node_abstract import AbstractNodeItem
 
@@ -12,8 +13,8 @@ if TYPE_CHECKING:
 
 from QtGraphology.base.commands import PropertyChangedCmd
 from QtGraphology.base.model import NodeModel
+from QtGraphology.base.graph import NodeGraph
 from QtGraphology.constants import NodePropWidgetEnum, LayoutDirectionEnum
-
 
 class _ClassProperty(object):
 
@@ -22,7 +23,6 @@ class _ClassProperty(object):
 
     def __get__(self: Self, instance, owner: Any)->Any:
         return self.f(owner)
-
 
 class NodeObject(object):
     """
@@ -112,8 +112,9 @@ class NodeObject(object):
 
     def __repr__(self: Self) -> str:
         return f'<{self.__class__.__name__}("{self.NODE_NAME}") object at {hex(id(self))}>'
+
     @_ClassProperty
-    def type_(cls):
+    def type_(cls: type) -> str: # type: ignore
         """
         Node type identifier followed by the class name.
         `eg.` ``"QtGraphology.nodes.NodeObject"``
@@ -121,10 +122,10 @@ class NodeObject(object):
         Returns:
             str: node type (``__identifier__.__className__``)
         """
-        return cls.__identifier__ + '.' + cls.__name__
+        return f'{cls.__identifier__}.{cls.__name__}'
 
     @property
-    def id(self):
+    def id(self: Self) -> str:
         """
         The node unique id.
 
@@ -134,8 +135,10 @@ class NodeObject(object):
         return self.model.id
 
     @property
-    def graph(self):
+    def graph(self: Self) -> NodeGraph | None:
         """
+        The parent node graph.
+
         The parent node graph.
 
         Returns:
@@ -144,7 +147,7 @@ class NodeObject(object):
         return self._graph
 
     @property
-    def view(self) -> AbstractNodeItem | NodeItem:
+    def view(self: Self) -> AbstractNodeItem | NodeItem:
         """
         Returns the :class:`QtWidgets.QGraphicsItem` used in the scene.
 
@@ -153,7 +156,7 @@ class NodeObject(object):
         """
         return self._view
 
-    def set_view(self, item):
+    def set_view(self: Self, item: AbstractNodeItem) -> None:
         """
         Set a new ``QGraphicsItem`` item to be used as the view.
         (the provided qgraphics item must be subclassed from the
@@ -163,8 +166,8 @@ class NodeObject(object):
             item (QtGraphology.qgraphics.node_abstract.AbstractNodeItem): node item.
         """
         if self._view:
-            old_view = self._view
-            scene = self._view.scene()
+            old_view: AbstractNodeItem = self._view
+            scene: QGraphicsScene = self._view.scene()
             scene.removeItem(old_view)
             self._view = item
             scene.addItem(self._view)

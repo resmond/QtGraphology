@@ -14,11 +14,13 @@ import re
 from typing import Self, Any
 
 from QtGraphology.widgets.actions import BaseMenu
-from QtGraphology.qgraphics import PipeItem
+from QtGraphology.widgets.scene import NodeScene
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from .commands import (
+from base import (
+    PipeItem,
+    AbstractNodeItem,
     NodeAddedCmd,
     NodeMovedCmd,
     NodesRemovedCmd,
@@ -636,7 +638,7 @@ class NodeGraph(QtCore.QObject):
         """
         return self._viewer
 
-    def scene(self):
+    def scene(self) -> NodeScene | None:
         """
         Returns the ``QGraphicsScene`` object used in the node graph.
 
@@ -1157,7 +1159,7 @@ class NodeGraph(QtCore.QObject):
         """
         self._viewer.reset_zoom()
 
-    def set_zoom(self, zoom=0):
+    def set_zoom(self: Self, zoom: float=0) -> None:
         """
         Set the zoom factor of the Node Graph the default is ``0.0``
 
@@ -1166,7 +1168,7 @@ class NodeGraph(QtCore.QObject):
         """
         self._viewer.set_zoom(zoom)
 
-    def get_zoom(self):
+    def get_zoom(self: Self) -> float:
         """
         Get the current zoom level of the node graph.
 
@@ -1175,17 +1177,21 @@ class NodeGraph(QtCore.QObject):
         """
         return self._viewer.get_zoom()
 
-    def center_on(self, nodes=None):
+    def center_on(self: Self, nodes: list[BaseNode]  = []) -> None:
         """
         Center the node graph on the given nodes or all nodes by default.
 
         Args:
             nodes (list[QtGraphology.BaseNode]): a list of nodes.
         """
-        nodes = nodes or []
         self._viewer.center_selection([n.view for n in nodes])
 
-    def center_selection(self):
+    def center_selection(self: Self) -> None:
+        """
+        Centers on the current selected nodes.
+        """
+        nodes: list[AbstractNodeItem] = self._viewer.selected_nodes()
+        self._viewer.center_selection(nodes)
         """
         Centers on the current selected nodes.
         """
@@ -1642,7 +1648,7 @@ class NodeGraph(QtCore.QObject):
             node.set_selected(not node.selected())
         self._undo_stack.endMacro()
 
-    def get_node_by_id(self, node_id=None):
+    def get_node_by_id(self: Self, node_id: str) -> NodeObject | None:
         """
         Returns the node from the node id string.
 
@@ -1652,9 +1658,10 @@ class NodeGraph(QtCore.QObject):
         Returns:
             QtGraphology.NodeObject: node object.
         """
-        return self._model.nodes.get(node_id, None)
+        if self._model and self._model.nodes:
+            return self._model.nodes.get(node_id, None)
 
-    def get_node_by_name(self, name):
+    def get_node_by_name(self: Self, name: str) -> NodeObject | None:
         """
         Returns node that matches the name.
 
@@ -1666,6 +1673,8 @@ class NodeGraph(QtCore.QObject):
         for node_id, node in self._model.nodes.items():
             if node.name() == name:
                 return node
+
+        return None
 
     def get_nodes_by_type(self, node_type):
         """

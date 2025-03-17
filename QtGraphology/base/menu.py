@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import re
 #from distutils.version import LooseVersion
@@ -9,43 +9,26 @@ from packaging.version import parse as version_parse
 from PySide6 import QtGui, QtCore
 
 from QtGraphology.errors import NodeMenuError
-from QtGraphology.widgets.actions import BaseMenu, GraphAction, NodeAction
+from QtGraphology.widgets.actions import BaseMenu, GraphAction, NodeAction, NodeGraph
 
 class NodeGraphMenu(object):
     """
     The ``NodeGraphMenu`` is the main context menu triggered from the node graph.
-
-    .. inheritance-diagram:: QtGraphology.NodeGraphMenu
-        :parts: 1
-
-    example for accessing the node graph context menu.
-
-    .. code-block:: python
-        :linenos:
-
-        from QtGraphology import NodeGraph
-
-        node_graph = NodeGraph()
-
-        # get the context menu for the node graph.
-        context_menu = node_graph.get_context_menu('graph')
-
     """
 
-    def __init__(self, graph, qmenu):
-        self._graph = graph
-        self._qmenu = qmenu
-        self._name = qmenu.title()
-        self._menus = {}
-        self._commands = {}
-        self._items = []
+    def __init__(self: Self, graph: NodeGraph, qmenu: NodeGraphMenu):
+        self._graph: NodeGraph = graph
+        self._qmenu: NodeGraphMenu = qmenu
+        self._name: str = qmenu.title()
+        self._menus: dict[str, NodeGraphMenu] = {}
+        self._commands: dict[str, NodeGraphCommand] = {}
+        self._items: list[NodeGraphMenu] = []
 
     def __repr__(self):
-        return '<{}("{}") object at {}>'.format(
-            self.__class__.__name__, self.name(), hex(id(self)))
+        return f'<{self.__class__.__name__}("{self.name()}") object at {hex(id(self))}>'
 
     @property
-    def qmenu(self):
+    def qmenu(self: Self) -> NodeGraphMenu:
         """
         The underlying QMenu.
 
@@ -54,8 +37,10 @@ class NodeGraphMenu(object):
         """
         return self._qmenu
 
-    def name(self):
+    def name(self: Self) -> str:
         """
+        Returns the name for the menu.
+
         Returns the name for the menu.
 
         Returns:
@@ -63,7 +48,7 @@ class NodeGraphMenu(object):
         """
         return self._name
 
-    def get_items(self):
+    def get_items(self: Self) -> list[NodeGraphMenu]:
         """
         Return the menu items in the order they were added.
 
@@ -72,7 +57,7 @@ class NodeGraphMenu(object):
         """
         return self._items
 
-    def get_menu(self, name):
+    def get_menu(self: Self, name: str) -> NodeGraphMenu | None:
         """
         Returns the child menu by name.
 
@@ -82,9 +67,9 @@ class NodeGraphMenu(object):
         Returns:
             QtGraphology.NodeGraphMenu: menu item.
         """
-        self._menus.get(name)
+        return self._menus.get(name)
 
-    def get_command(self, name):
+    def get_command(self: Self, name: str) -> NodeGraphCommand | None:
         """
         Returns the child menu command by name.
 
@@ -94,9 +79,9 @@ class NodeGraphMenu(object):
         Returns:
             QtGraphology.NodeGraphCommand: context menu command.
         """
-        return self._commands.get(name)
+        return self._commands.get(name) or None
 
-    def add_menu(self, name):
+    def add_menu(self: Self, name: str) -> NodeGraphMenu:
         """
         Adds a child menu to the current menu.
 
@@ -108,15 +93,15 @@ class NodeGraphMenu(object):
         """
         if name in self._menus:
             raise NodeMenuError('menu object "{}" already exists!'.format(name))
-        base_menu = BaseMenu(name, self.qmenu)
-        self.qmenu.addMenu(base_menu)
-        menu = NodeGraphMenu(self._graph, base_menu)
+        graph_menu: NodeGraphMenu = NodeGraphMenu(self._graph, self.qmenu)
+        self.qmenu.addMenu(graph_menu)
+        menu: NodeGraphMenu = NodeGraphMenu(self._graph, graph_menu)
         self._menus[name] = menu
         self._items.append(menu)
         return menu
 
     @staticmethod
-    def _set_shortcut(action, shortcut):
+    def _set_shortcut(action: NodeGraphAction, shortcut):
         if isinstance(shortcut, str):
             search = re.search(r"(?:\.|)QKeySequence\.(\w+)", shortcut)
             if search:
@@ -172,26 +157,8 @@ class NodeGraphMenu(object):
         self._items.append(None)
 
 class NodesMenu(NodeGraphMenu):
-    """
-    The ``NodesMenu`` is the context menu triggered from a node.
 
-    .. inheritance-diagram:: QtGraphology.NodesMenu
-        :parts: 1
-
-    example for accessing the nodes context menu.
-
-    .. code-block:: python
-        :linenos:
-
-        from QtGraphology import NodeGraph
-
-        node_graph = NodeGraph()
-
-        # get the nodes context menu.
-        nodes_menu = node_graph.get_context_menu('nodes')
-    """
-
-    def add_command(self, name, func=None, node_type=None, node_class=None, shortcut=None):
+    def add_command(self: Self, name: str, func=None, node_type: str | None = None, node_class: type | None = None, shortcut: str | None = None) -> NodeGraphCommand:
         """
         Re-implemented to add a command to the specified node type menu.
 
@@ -257,7 +224,7 @@ class NodeGraphCommand(object):
 
     """
 
-    def __init__(self, graph, qaction, func=None):
+    def __init__(self: Self, graph: NodeGraph, qaction: GraphAction, func=None):
         self._graph = graph
         self._qaction = qaction
         self._name = qaction.text()
@@ -268,26 +235,17 @@ class NodeGraphCommand(object):
             self.__class__.__name__, self.name(), hex(id(self)))
 
     @property
-    def qaction(self):
+    def qaction(self: Self) -> GraphAction:
         """
         The underlying qaction.
-
-        Returns:
-            GraphAction: qaction object.
         """
         return self._qaction
 
     @property
-    def slot_function(self):
-        """
-        The function executed by this command.
-
-        Returns:
-            function: command function.
-        """
+    def slot_function(self: Self) -> Any:
         return self._func
 
-    def name(self):
+    def name(self: Self) -> str:
         """
         Returns the name for the menu command.
 
@@ -296,23 +254,22 @@ class NodeGraphCommand(object):
         """
         return self._name
 
-    def set_shortcut(self, shortcut=None):
+    def set_shortcut(self: Self, shortcut: QtGui.QKeySequence | QtCore.QKeyCombination | QtGui.QKeySequence.StandardKey | str | int) -> None:
         """
         Sets the shortcut key combination for the menu command.
 
         Args:
             shortcut (str): shortcut key.
         """
-        shortcut = shortcut or QtGui.QKeySequence()
         self.qaction.setShortcut(shortcut)
 
-    def run_command(self):
+    def run_command(self: Self) -> None:
         """
-        execute the menu command.
+        Execute the menu command.
         """
         self.qaction.trigger()
 
-    def set_enabled(self, state):
+    def set_enabled(self: Self, state: bool) -> None:
         """
         Sets the command to either be enabled or disabled.
 
@@ -321,7 +278,7 @@ class NodeGraphCommand(object):
         """
         self.qaction.setEnabled(state)
 
-    def set_hidden(self, hidden):
+    def set_hidden(self: Self, hidden: bool) -> None:
         """
         Sets then command item visibility in the context menu.
 
@@ -330,13 +287,13 @@ class NodeGraphCommand(object):
         """
         self.qaction.setVisible(not hidden)
 
-    def show(self):
+    def show(self: Self) -> None:
         """
         Set the command to be visible in the context menu.
         """
         self.qaction.setVisible(True)
 
-    def hide(self):
+    def hide(self: Self) -> None:
         """
         Set the command to be hidden in the context menu.
         """

@@ -7,7 +7,8 @@ from PySide6 import QtCore, QtWidgets, QtGui
 
 
 from QtGraphology.constants import ViewerEnum
-from QtGraphology.base import NodeGraph
+from QtGraphology.base import NodeGraph, AbstractNodeItem
+
 class BaseMenu(QtWidgets.QMenu):
 
     def __init__(self: Self, *args, **kwargs: dict[str, Any]) -> None:
@@ -62,22 +63,22 @@ class BaseMenu(QtWidgets.QMenu):
     #         if hasattr(a, 'node_id'):
     #             a.node_id = None
 
-    def get_menu(self: Self, name: str, node_id=None) -> QtCore.QObject | None:
+    def get_menu(self: Self, name: str, node_id: str) -> BaseMenu | None:
         for action in self.actions():
-            menu: QtCore.QObject = action.menu()
+            menu: BaseMenu = action.menu() # type: ignore
             if not menu:
                 continue
             if menu.title() == name:
                 return menu
             if node_id and menu.node_class:
-                node = menu.graph.get_node_by_id(node_id)
+                node: AbstractNodeItem = menu.graph.get_node_by_id(node_id) # type: ignore
                 if isinstance(node, menu.node_class):
                     return menu
 
-    def get_menus(self, node_class):
-        menus = []
+    def get_menus(self: Self, node_class: type) -> list[BaseMenu]:
+        menus: list[BaseMenu] = []
         for action in self.actions():
-            menu = action.menu()
+            menu: BaseMenu = action.menu()  # type: ignore
             if menu.node_class:
                 if issubclass(menu.node_class, node_class):
                     menus.append(menu)
@@ -90,16 +91,21 @@ class GraphAction(QtGui.QAction):
 
     def __init__(self: Self, *args, **kwargs: dict[str, Any]) -> None:
         super(GraphAction, self).__init__(*args, **kwargs)
-        self.graph = None
+        self.graph: NodeGraph | None = None
+        self.qmenu: QtWidgets.QMenu | None = None
         self.triggered.connect(self._on_triggered)
 
     def _on_triggered(self: Self):
         self.executed.emit(self.graph)
 
-    def get_action(self: Self, name: str):
+    def get_action(self: Self, name: str) -> QtGui.QAction | None:
+        if not self.qmenu:
+            return None
+
         for action in self.qmenu.actions():
             if not action.menu() and action.text() == name:
                 return action
+        return None
 
 
 class NodeAction(GraphAction):
@@ -111,5 +117,8 @@ class NodeAction(GraphAction):
         self.node_id = None
 
     def _on_triggered(self: Self) -> None:
+        if not self.graph:
+            return
+
         node = self.graph.get_node_by_id(self.node_id)
         self.executed.emit(self.graph, node)
