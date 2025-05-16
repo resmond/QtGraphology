@@ -25,69 +25,16 @@ class _ClassProperty(object):
         return self.f(owner)
 
 class NodeObject(object):
-    """
-    The ``QtGraphology.NodeObject`` class is the main base class that all
-    nodes inherit from.
 
-    .. inheritance-diagram:: QtGraphology.NodeObject
-
-    Args:
-        qgraphics_item (AbstractNodeItem): QGraphicsItem item used for drawing.
-    """
-
+    #  Unique node identifier domain. eg. ``"io.github.resmond"``
+    #      re-implement this attribute to provide a unique node type.
     __identifier__: str = 'QtGraphology.nodes'
 
-    """
-    Unique node identifier domain. eg. ``"io.github.resmond"``
-
-    .. important:: re-implement this attribute to provide a unique node type.
-
-        .. code-block:: python
-            :linenos:
-
-            from QtGraphology import NodeObject
-
-            class ExampleNode(NodeObject):
-
-                # unique node identifier domain.
-                __identifier__ = 'io.github.resmond'
-
-                def __init__(self):
-                    ...
-
-    :return: node type domain.
-    :rtype: str
-
-    :meta hide-value:
-    """
-
+    # important:: re-implement this attribute to provide a base node name.
     NODE_NAME = None
 
-    """
-    Initial base node name.
-
-    .. important:: re-implement this attribute to provide a base node name.
-
-        .. code-block:: python
-            :linenos:
-
-            from QtGraphology import NodeObject
-
-            class ExampleNode(NodeObject):
-
-                # initial default node name.
-                NODE_NAME = 'Example Node'
-
-                def __init__(self):
-                    ...
-
-    :return: node name
-    :rtype: str
-
-    :meta hide-value:
-    """
-
-    def __init__(self, qgraphics_item: AbstractNodeItem | None = None):
+    #  Node type identifier followed by the class name.
+    def __init__(self: Self, qgraphics_item: AbstractNodeItem | None = None):
         """
         Args:
             qgraphics_item (AbstractNodeItem): QGraphicsItem used for drawing.

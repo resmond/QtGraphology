@@ -44,3 +44,9 @@ dependencies = {file = "requirements.txt"}
 [tool.setuptools.packages.find]
 include = ["QtGraphology*"]
 namespaces = false
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11.0",
+    "rye",
+]

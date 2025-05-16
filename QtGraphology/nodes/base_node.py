@@ -1,9 +1,9 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 from collections import OrderedDict
 from typing import Any, Self
 
+from QtGraphology import Port
 from QtGraphology.base.commands import NodeVisibleCmd, NodeWidgetVisibleCmd
 from QtGraphology.base.node import NodeObject
 from QtGraphology.base.port import Port
@@ -12,6 +12,10 @@ from QtGraphology.errors import (
     PortError,
     PortRegistrationError,
     NodeWidgetError
+)
+from QtGraphology.nodes.port_node import (
+    PortInputNode,
+    PortOutputNode,
 )
 from QtGraphology.qgraphics.node_base import NodeItem
 from QtGraphology.qgraphics.port import PortItem
@@ -63,7 +67,7 @@ class BaseNode(NodeObject):
     def __init__(self: Self, qgraphics_item: NodeItem | None=None) -> None:
         super().__init__(qgraphics_item=qgraphics_item or NodeItem)
         self._inputs: list[PortInputNode] = []
-        self._outputs = []
+        self._outputs: list[PortOutputNode] = []
 
     def update_model(self) -> None:
         """
@@ -439,7 +443,7 @@ class BaseNode(NodeObject):
         if color:
             view.color = color
             view.border_color = [min([255, max([0, i + 80])]) for i in color]
-        port = Port(self, view)
+        port: Port = Port(self, view)
         port.model.type_ = PortTypeEnum.OUT.value
         port.model.name = name
         port.model.display_name = display_name
@@ -796,30 +800,6 @@ class BaseNode(NodeObject):
         return accepted_types
 
     def add_reject_port_type(self, port, port_type_data):
-        """
-        Add a reject constrain to a specified node port.
-
-        Once a constrain has been added only ports of that type specified will
-        NOT be allowed a pipe connection.
-
-        port type data example
-
-        .. highlight:: python
-        .. code-block:: python
-
-            {
-                'port_name': 'foo',
-                'port_type': PortTypeEnum.IN.value,
-                'node_type': 'io.github.resmond.NodeClass',
-            }
-
-        See Also:
-            :meth:`QtGraphology.Port.rejected_port_types`
-
-        Args:
-            port (QtGraphology.Port): port to assign constrain to.
-            port_type_data (dict): port type data to reject a connection
-        """
         node_ports = self._inputs + self._outputs
         if port not in node_ports:
             raise PortError('Node does not contain port: "{}"'.format(port))
@@ -834,16 +814,6 @@ class BaseNode(NodeObject):
         )
 
     def rejected_port_types(self, port):
-        """
-        Returns a dictionary of connection constrains of the port types
-        that are NOT allowed for a pipe connection to this node.
-
-        Args:
-            port (QtGraphology.Port): port object.
-
-        Returns:
-            dict: {<node_type>: {<port_type>: [<port_name>]}}
-        """
         ports = self._inputs + self._outputs
         if port not in ports:
             raise PortError('Node does not contain port "{}"'.format(port))

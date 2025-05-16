@@ -1,16 +1,16 @@
 #!/usr/bin/python
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import Self, Any
 
 import json
 from collections import defaultdict
-from re import S
-#from tkinter import N
-from typing import Any, Literal, Self
 
-from QtGraphology.errors import NodePropertyError
+from QtGraphology import BaseNode
 from QtGraphology.base.node import NodeObject
-from QtGraphology.constants import *
+from ..constants import TCOLOR, LayoutDirectionEnum, NodePropWidgetEnum, PipeLayoutEnum
+from QtGraphology.errors import NodePropertyError
+
+
 class PortModel(object):
     """
     Data dump for a port object.
@@ -36,7 +36,7 @@ class PortModel(object):
         serialize model information to a dictionary.
 
         Returns:
-            dict: node port dictionary eg.
+            dict: node port dictionary e.g.
                 {
                     'type': 'in',
                     'name': 'port',
@@ -91,7 +91,7 @@ class NodeModel(object):
         # (deleted when node is added to the graph)
         self._TEMP_property_attrs: dict[str,Any] = {}
 
-        # temp store the property widget types.
+        # temps store the property widget types.
         # (deleted when node is added to the graph)
         self._TEMP_property_widget_types: dict[str, Any] = {
             'type_': NodePropWidgetEnum.QLABEL.value,
@@ -124,13 +124,12 @@ class NodeModel(object):
             self: Self,
             name: str,
             value: Any,
-            items: list[Any] = [],
-            range: Any = None,
+            items: dict[str, Any] | None = None,
             widget_type: NodePropWidgetEnum = NodePropWidgetEnum.HIDDEN,
-            widget_tooltip: str='',
-            tab: str | None=None,
+            widget_tooltip: str = '',
+            tab: str | None = None,
             **kwargs: dict[str, Any]
-    ) -> None:
+        ) -> None:
         """
         add custom property or raises an error if the property name is already
         taken.
@@ -138,18 +137,19 @@ class NodeModel(object):
         Args:
             name (str): name of the property.
             value (object): data.
-            items (list[str]): items used by widget type NODE_PROP_QCOMBO.
-            range (tuple): min, max values used by NODE_PROP_SLIDER.
+            items (list[str]): items used by widget type NODE_PROP_COMBO.
             widget_type (int): widget type flag.
             widget_tooltip (str): custom tooltip for the property widget.
             tab (str): widget tab name.
         """
+        if items is None:
+            items: dict[str,BaseNode] = {}
         widget_type: NodePropWidgetEnum = widget_type
         tab: str | None = tab or 'Properties'
 
         if name in self.properties.keys():
-            raise NodePropertyError(
-                '"{}" reserved for default property.'.format(name))
+            raise NodePropertyError(f'"{name}" reserved for default property.')
+
         if name in self._custom_prop.keys():
             raise NodePropertyError(
                 '"{}" property already exists.'.format(name))
@@ -259,20 +259,8 @@ class NodeModel(object):
             accept_pname: str,
             accept_ptype: str,
             accept_ntype: str,
-    ) -> None:
-        """
-        Convenience function for adding to the "accept_connection_types" dict.
-        If the node graph model is unavailable yet then we store it to a
-        temp var that gets deleted.
+        ) -> None:
 
-        Args:
-            port_name (str): current port name.
-            port_type (str): current port type.
-            node_type (str): current port node type.
-            accept_pname (str): port name to accept.
-            accept_ptype (str): port type accept.
-            accept_ntype (str): port node type to accept.
-        """
         model: NodeGraphModel | None = self._graph_model
         if model:
             model.add_port_accept_connection_type(
@@ -305,20 +293,8 @@ class NodeModel(object):
             reject_pname: str,
             reject_ptype: str,
             reject_ntype: str,
-    ) -> None:
-        """
-        Convenience function for adding to the "reject_connection_types" dict.
-        If the node graph model is unavailable yet then we store it to a
-        temp var that gets deleted.
+        ) -> None:
 
-        Args:
-            port_name (str): current port name.
-            port_type (str): current port type.
-            node_type (str): current port node type.
-            reject_pname (str): port name to reject.
-            reject_ptype (str): port type reject.
-            reject_ntype (str): port node type to reject.
-        """
         model: NodeGraphModel | None = self._graph_model
         if model:
             model.add_port_reject_connection_type(
@@ -328,9 +304,6 @@ class NodeModel(object):
 
         connection_data = self._TEMP_reject_connection_types
         keys: list[str]= [node_type, port_type, port_name, reject_ntype]
-        # TODO: This is a very weird for loop condition aka for context, this
-        #  always result in connection_data becoming empty dict since the original
-        #  _TEMP_reject_connection_types is already empty dict on init
         for key in keys:
             if key not in connection_data.keys():
                 connection_data[key] = {}
@@ -343,12 +316,6 @@ class NodeModel(object):
 
     @property
     def properties(self: Self) -> dict[str, Any]:
-        """
-        return all default node properties.
-
-        Returns:
-            dict: default node properties.
-        """
         props: dict[str, Any] = self.__dict__.copy()
         exclude: list[str] = [
             "_custom_prop",
@@ -362,15 +329,9 @@ class NodeModel(object):
 
         return props
 
-    @property
-    def properties(self: Self) -> dict[str, Any]:
-        """
-        return all custom properties specified by the user.
-
-        Returns:
-            dict: user defined properties.
-        """
-        return self._custom_prop
+#    @property
+#    def properties(self: Self) -> dict[str, Any]:
+#        return self._custom_prop
 
     @property
     def to_dict(self)-> dict[str, dict[str, Any]]:
@@ -378,13 +339,13 @@ class NodeModel(object):
         serialize model information to a dictionary.
 
         Returns:
-            dict: node id as the key and properties as the values eg.
+            dict: node id as the key and properties as the values e.g.
                 {'0x106cf75a8': {
                     'name': 'foo node',
                     'color': (48, 58, 69, 255),
                     'border_color': (85, 100, 100, 255),
                     'text_color': (255, 255, 255, 180),
-                    'type_': 'io.github.resmond.FooNode',
+                    'type_': 'io.GitHub.resmond.FooNode',
                     'selected': False,
                     'disabled': False,
                     'visible': True,
@@ -474,6 +435,7 @@ class NodeGraphModel(object):
     """
 
     def __init__(self: Self) -> None:
+        self.nodes = None
         self.__common_node_props: dict[str, Any] = {}
 
         self.accept_connection_types: dict[str, Any] = {}
@@ -493,7 +455,7 @@ class NodeGraphModel(object):
 
         Args:
             attrs (dict): common node properties.
-                eg.
+                e.g.
                     {'QtGraphology.nodes.FooNode': {
                         'my_property': {
                             'widget_type': 0,
@@ -512,7 +474,7 @@ class NodeGraphModel(object):
 
         Args:
             attrs (dict): common node properties.
-                eg.
+                e.g.
                     {'QtGraphology.nodes.FooNode': {
                         'my_property': {
                             'widget_type': 0,
@@ -565,8 +527,8 @@ class NodeGraphModel(object):
             port_name (str): current port name.
             port_type (str): current port type.
             node_type (str): current port node type.
-            accept_pname (str):port name to accept.
-            accept_ptype (str): port type accept.
+            accept_pname (str): port name to accept.
+            accept_ptype (str): port type accepts.
             accept_ntype (str): port node type to accept.
         """
         connection_data: dict[str, Any] = self.accept_connection_types

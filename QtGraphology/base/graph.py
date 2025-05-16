@@ -1,7 +1,5 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#from __future__ import annotations
-from typing import TYPE_CHECKING
 
 import copy
 import json
@@ -13,19 +11,19 @@ import re
 #from tkinter import N
 from typing import Self, Any
 
+from QtGraphology.base import (
+    NodeMovedCmd,
+    NodeAddedCmd,
+    NodesRemovedCmd,
+    PortConnectedCmd,
+)
+from QtGraphology.qgraphics.node_abstract import AbstractNodeItem
+from QtGraphology.qgraphics.pipe import PipeItem
 from QtGraphology.widgets.actions import BaseMenu
 from QtGraphology.widgets.scene import NodeScene
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from base import (
-    PipeItem,
-    AbstractNodeItem,
-    NodeAddedCmd,
-    NodeMovedCmd,
-    NodesRemovedCmd,
-    PortConnectedCmd,
-)
 from QtGraphology.base.factory import NodeFactory
 from QtGraphology.base.menu import NodeGraphMenu, NodesMenu
 from QtGraphology.base.model import NodeGraphModel
@@ -57,9 +55,6 @@ from QtGraphology.widgets.node_graph import (
     SubGraphWidget,
 )
 from QtGraphology.widgets.viewer import NodeViewer
-from QtGraphology.widgets.viewer_nav import (
-    NodeNavigationWidget,
-)
 
 
 class NodeGraph(QtCore.QObject):
@@ -163,13 +158,13 @@ class NodeGraph(QtCore.QObject):
     :emits: triggered context menu, node object.
     """
 
-    def __init__(self: Self, parent=None, **kwargs: dict[str, Any]) -> None:
+    def __init__(self: Self, parent =None, **kwargs: dict[str, Any]) -> None:
         """
         Args:
             parent (object): object parent.
             **kwargs (dict): Used for overriding internal objects at init time.
         """
-        super(NodeGraph, self).__init__(parent=parent)
+        super(NodeGraph, self).__init__(parent:=parent)
         self.setObjectName('NodeGraph')
 
         if kwargs:
@@ -420,7 +415,7 @@ class NodeGraph(QtCore.QObject):
                     try:
                         self.import_session(local_file)
                         continue
-                    except Exception as e:
+                    except Exception:
                         not_supported_urls.append(url)
 
                 url_str = url.toString()
@@ -431,7 +426,7 @@ class NodeGraph(QtCore.QObject):
                         ext = uri_search.group(2)
                         try:
                             self.import_session('{}{}'.format(path, ext))
-                        except Exception as e:
+                        except Exception:
                             not_supported_urls.append(url)
 
             if not_supported_urls:
@@ -1432,7 +1427,6 @@ class NodeGraph(QtCore.QObject):
         """
         assert isinstance(node, NodeObject), \
             'node must be a instance of a NodeObject.'
-        node_id = node.id
         if push_undo:
             self._undo_stack.beginMacro('delete node: "{}"'.format(node.name()))
 
@@ -2133,7 +2127,7 @@ class NodeGraph(QtCore.QObject):
 
         try:
             serial_data = json.loads(cb_text)
-        except json.decoder.JSONDecodeError as e:
+        except json.decoder.JSONDecodeError:
             print(f"ERROR: Can't Decode Clipboard Data: {cb_text}")
             return
 
@@ -2508,7 +2502,7 @@ class NodeGraph(QtCore.QObject):
 
         # build new sub graph.
         node_factory = copy.deepcopy(self.node_factory)
-        layout_direction = self.layout_direction()
+        self.layout_direction()
         kwargs = {
             'layout_direction': self.layout_direction(),
             'pipe_style': self.pipe_style(),

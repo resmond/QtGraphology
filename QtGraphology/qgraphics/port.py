@@ -12,7 +12,7 @@ from QtGraphology.constants import (
     ITEM_CACHE_MODE,
     PortEnum,
     PortTypeEnum,
-    Z_VAL_PORT,
+    Z_VAL_PORT, TCOLOR,
 )
 
 
@@ -39,7 +39,7 @@ class PortItem(QtWidgets.QGraphicsItem):
         self._hovered: bool = False
         self._name: str = "port"
         self._display_name: bool = True
-        self._color: tuple[int, int, int, int] = PortEnum.COLOR.value
+        self._color: TCOLOR = PortEnum.COLOR.value
         self._border_color: tuple[int, int, int, int] = PortEnum.BORDER_COLOR.value
         self._border_size: int = 1
         self._port_type: Literal["in", "out"] | None = None

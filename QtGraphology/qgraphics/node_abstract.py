@@ -1,50 +1,52 @@
 #!/usr/bin/python
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
-from PySide6 import QtCore, QtWidgets
-from typing import Dict, Any, List, Tuple, Optional, Union, cast, TYPE_CHECKING, Self
+from PySide6 import QtCore
+from typing import Dict, List, Tuple, Optional, cast
 
 from QtGraphology.constants import *
-from QtGraphology.widgets.viewer import NodeViewer, NodeScene
+from QtGraphology.widgets.viewer import NodeViewer
 
+"""
+A base class for node graphics items in Qt applications with support for node-based workflows.
+
+This class provides the foundation for creating interactive node items that can be used in
+node graph interfaces. It handles common node functionality such as selection, movement,
+appearance styling, and sizing. The class manages a properties dictionary that stores
+node attributes like color, name, and state.
+
+AbstractNodeItem is designed to be subclassed for specific node types, with common
+functionality already implemented. Subclasses should implement at minimum the `draw_node()`
+method to define the node's appearance.
+
+Inherits:
+    QtWidgets.QGraphicsItem: Base Qt class for custom graphics items in a QGraphicsScene
+
+Attributes:
+    _properties (dict): Dictionary containing node properties including:
+        - id: Unique identifier for the node
+        - type_: String identifier for the node type
+        - name: Display name of the node
+        - color: Main node color as RGBA tuple (r, g, b, a)
+        - border_color: Border color as RGBA tuple
+        - text_color: Text color as RGBA tuple
+        - layout_direction: Direction of the node layout (horizontal/vertical)
+        - selected: Boolean indicating if the node is selected
+        - disabled: Boolean indicating if the node is disabled
+        - visible: Boolean indicating if the node is visible
+
+    _width (float): Width of the node
+    _height (float): Height of the node
+
+    The base class of all node QtGraphics item.
+"""
 class AbstractNodeItem(QtWidgets.QGraphicsItem):
-    """
-    A base class for node graphics items in Qt applications with support for node-based workflows.
 
-    This class provides the foundation for creating interactive node items that can be used in
-    node graph interfaces. It handles common node functionality such as selection, movement,
-    appearance styling, and sizing. The class manages a properties dictionary that stores
-    node attributes like color, name, and state.
-
-    AbstractNodeItem is designed to be subclassed for specific node types, with common
-    functionality already implemented. Subclasses should implement at minimum the `draw_node()`
-    method to define the node's appearance.
-
-    Inherits:
-        QtWidgets.QGraphicsItem: Base Qt class for custom graphics items in a QGraphicsScene
-
-    Attributes:
-        _properties (dict): Dictionary containing node properties including:
-            - id: Unique identifier for the node
-            - type_: String identifier for the node type
-            - name: Display name of the node
-            - color: Main node color as RGBA tuple (r, g, b, a)
-            - border_color: Border color as RGBA tuple
-            - text_color: Text color as RGBA tuple
-            - layout_direction: Direction of the node layout (horizontal/vertical)
-            - selected: Boolean indicating if the node is selected
-            - disabled: Boolean indicating if the node is disabled
-            - visible: Boolean indicating if the node is visible
-
-        _width (float): Width of the node
-        _height (float): Height of the node
-
-        The base class of all node qgraphics item.
-    """
-
-    def __init__(self: Self, name: str = 'node', parent: Optional[QtWidgets.QGraphicsItem] = None) -> None:
+    # name: what is this used for ?
+    # parent: relationship in the basic hierarchy
+    def __init__(self: Self, name: str = 'node', parent: QtWidgets.QGraphicsItem | AbstractNodeItem | None = None) -> None:
         super().__init__(parent=parent)
+        self._properties = None
         self.setFlags(self.GraphicsItemFlag.ItemIsSelectable | self.GraphicsItemFlag.ItemIsMovable)
         self.setCacheMode(ITEM_CACHE_MODE)
         self.setZValue(Z_VAL_NODE)
@@ -67,37 +69,29 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
     def __repr__(self: Self) -> str:
         return f'{self.__module__}.{self.__class__.__name__}(\'{self.name}\')'
 
+    # Get a QRectF with just the width and height for placement in view
     def boundingRect(self: Self) -> QtCore.QRectF:
         return QtCore.QRectF(0.0, 0.0, self._width, self._height)
 
+    # overload to customize the press event
     def mousePressEvent(self: Self, event: QtWidgets.QGraphicsSceneMouseEvent) -> None:
-        """
-        Re-implemented to update "self._properties['selected']" attribute.
-
-        Args:
-            event (QtWidgets.QGraphicsSceneMouseEvent): mouse event.
-        """
-        self._properties['selected'] = True
+        self.setSelected(True)
         super().mousePressEvent(event)
 
+    # overload to customize the selected event
     def setSelected(self: Self, selected: bool) -> None:
         self._properties['selected'] = selected
         super().setSelected(selected)
 
+    # overload to customize draw event
+    # Re-draw the node item in the scene with proper
+    # calculated size and widgets aligned.
     def draw_node(self: Self) -> None:
-        """
-        Re-draw the node item in the scene with proper
-        calculated size and widgets aligned.
-
-        (this is called from the builtin custom widgets.)
-        """
         return
 
+    # Called before node has been added into the scene.
     def pre_init(self: Self, viewer: NodeViewer, pos: Optional[TPOSITION] = None) -> None:
         """
-        Called before node has been added into the scene.
-
-        Args:
             viewer (QtGraphology.widgets.viewer.NodeViewer): main viewer.
             pos (tuple): the cursor pos if node is called with tab search.
         """
@@ -139,7 +133,7 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
 
     @property
     def size(self: Self) -> TSIZE:
-        return (self._width, self._height)
+        return self._width, self._height
 
     @property
     def width(self: Self) -> float:
@@ -211,7 +205,7 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
     @property
     def xy_pos(self: Self) -> TPOSITION:
         """
-        return the item scene postion.
+        return the item scene position.
         ("node.pos" conflicted with "QGraphicsItem.pos()"
         so it was refactored to "xy_pos".)
 
@@ -223,7 +217,7 @@ class AbstractNodeItem(QtWidgets.QGraphicsItem):
     @xy_pos.setter
     def xy_pos(self: Self, pos: Optional[List[float]] = None) -> None:
         """
-        set the item scene postion.
+        set the item scene position.
         ("node.pos" conflicted with "QGraphicsItem.pos()"
         so it was refactored to "xy_pos".)
 

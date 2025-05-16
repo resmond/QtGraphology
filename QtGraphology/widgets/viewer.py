@@ -1,16 +1,14 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import Sequence
 
 import math
-# distutils.version is deprecated and will be removed in Python 3.12
 from packaging.version import parse as version_parse
 
-from typing import Literal, Self, TYPE_CHECKING, Any
+from typing import Literal, Self, Any
 
 from PySide6 import QtGui, QtCore, QtWidgets
-from PySide6.QtWidgets import QGraphicsView, QGraphicsItemGroup, QRubberBand, QMenuBar, QWidget, QGraphicsTextItem, QGraphicsSceneMouseEvent, QGraphicsScene, QGraphicsItem, QGraphicsSceneMouseEvent
-from PySide6.QtCore import QRectF, QPoint, Signal
-from PySide6.QtGui import QPainterPath, QColor, QPen, QFontMetrics, QFont
+from PySide6.QtWidgets import QRubberBand, QWidget, QGraphicsItem
+from PySide6.QtGui import QPainterPath
 
 from QtGraphology.base.menu import BaseMenu
 from QtGraphology.constants import (
@@ -19,7 +17,7 @@ from QtGraphology.constants import (
     PipeEnum,
     PipeLayoutEnum,
     ViewerEnum,
-    Z_VAL_PIPE,
+    Z_VAL_PIPE
 )
 from QtGraphology.qgraphics.node_abstract import AbstractNodeItem
 from QtGraphology.qgraphics.node_backdrop import BackdropNodeItem
@@ -36,16 +34,6 @@ ZOOM_MAX = 2.0
 
 
 class NodeViewer(QtWidgets.QGraphicsView):
-    """
-    The widget interface used for displaying the scene and nodes.
-
-    functions in this class should mainly be called by the
-    class:`QtGraphology.NodeGraph` class.
-    """
-
-    # node viewer signals.
-    # (some of these signals are called by port & node items and connected
-    # to the node graph slot functions)
     moved_nodes = QtCore.Signal(dict)
     search_triggered = QtCore.Signal(str, tuple)
     connection_sliced = QtCore.Signal(list)
@@ -65,12 +53,6 @@ class NodeViewer(QtWidgets.QGraphicsView):
                  parent: QWidget | None = None,
                  undo_stack:QtGui.QUndoStack | None=None
                  ) -> None:
-        """
-        Args:
-            parent:
-            undo_stack (QtGui.QUndoStack): undo stack from the parent
-                                               graph controller.
-        """
         super().__init__(parent=parent)
 
         self.setScene(NodeScene(parent=self))
@@ -115,14 +97,11 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self._rubber_band: QRubberBand = QRubberBand(QRubberBand.Shape.Rectangle, self)
         self._rubber_band_active: bool  = False
 
-#       this is different than Oden
         self._ctx_graph_menu: BaseMenu = BaseMenu('NodeGraph', self)
         self._ctx_node_menu: BaseMenu = BaseMenu('Nodes', self)
 
-        text_color: QtGui.QColor = QtGui.QColor(*tuple(map(
-            lambda i, j: i - j, (255, 255, 255),
-            ViewerEnum.BACKGROUND_COLOR.value
-        )))
+        temp_color = map(lambda i, j: i - j, (255, 255, 255),ViewerEnum.BACKGROUND_COLOR.value)
+        text_color: QtGui.QColor = QtGui.QColor(temp_color)
         text_color.setAlpha(50)
         self._cursor_text: QtWidgets.QGraphicsTextItem = QtWidgets.QGraphicsTextItem()
         self._cursor_text.setFlag(self._cursor_text.GraphicsItemFlag.ItemIsSelectable, enabled=False)
@@ -192,22 +171,14 @@ class NodeViewer(QtWidgets.QGraphicsView):
             self.__class__.__name__, hex(id(self)))
 
     def focusInEvent(self: Self, event) -> None:
-        """
-        Args:
-            event (QtGui.QFocusEvent): focus event.
-        """
-        # workaround fix: Re-populate the QMenuBar so the QAction shotcuts don't
+        # workaround fix: Re-populate the QMenuBar so the QAction shortcuts don't
         #                 conflict with parent existing host app.
         self._ctx_menu_bar.addMenu(self._ctx_graph_menu)
         self._ctx_menu_bar.addMenu(self._ctx_node_menu)
         return super(NodeViewer, self).focusInEvent(event)
 
     def focusOutEvent(self: Self, event) -> None:
-        """
-        Args:
-            event (QtGui.QFocusEvent): focus event.
-        """
-        # workaround fix: Clear the QMenuBar so the QAction shotcuts don't
+        # workaround fix: Clear the QMenuBar so the QAction shortcuts don't
         #                 conflict with existing parent host app.
         self._ctx_menu_bar.clear()
         return super(NodeViewer, self).focusOutEvent(event)
@@ -215,9 +186,6 @@ class NodeViewer(QtWidgets.QGraphicsView):
     # --- private ---
 
     def _build_context_menus(self: Self) -> None:
-        """
-        Build context menu for the node graph.
-        """
         # "node context menu" disabled by default and enabled when a action
         # is added through the "NodesMenu" interface.
         self._ctx_node_menu.setDisabled(True)
@@ -234,22 +202,15 @@ class NodeViewer(QtWidgets.QGraphicsView):
                 self._undo_action.setShortcutVisibleInContextMenu(True)
                 self._redo_action.setShortcutVisibleInContextMenu(True)
 
-            # undo & redo always at the top of the "node graph context menu".
+            # undo and redo always at the top of the "node graph context menu".
             self._ctx_graph_menu.addAction(self._undo_action)
             self._ctx_graph_menu.addAction(self._redo_action)
             self._ctx_graph_menu.addSeparator()
 
     def _set_viewer_zoom(self: Self, value, sensitivity=None, pos=None) -> None:
-        """
-        Sets the zoom level.
-
-        Args:
-            value (float): zoom factor.
-            sensitivity (float): zoom sensitivity.
-            pos (QtCore.QPoint): mapped position.
-        """
         if pos:
             pos = self.mapToScene(pos)
+
         if sensitivity is None:
             scale = 1.001 ** value
             self.scale(scale, scale, pos)
@@ -269,13 +230,6 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self.scale(scale, scale, pos)
 
     def _set_viewer_pan(self: Self, pos_x, pos_y) -> None:
-        """
-        Set the viewer in panning mode.
-
-        Args:
-            pos_x (float): x pos.
-            pos_y (float): y pos.
-        """
         self._scene_range.adjust(pos_x, pos_y, pos_x, pos_y)
         self._update_scene()
 
@@ -292,21 +246,12 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self._update_scene()
 
     def _update_scene(self: Self) -> None:
-        """
-        Redraw the scene.
-        """
         self.setSceneRect(self._scene_range)
         self.fitInView(self._scene_range, QtCore.Qt.AspectRatioMode.KeepAspectRatio)
 
-    def _combined_rect(self: Self, nodes: Sequence[QGraphicsItem]) -> QtCore.QRectF:
+    def _combined_rect(self: Self, nodes: Sequence[AbstractNodeItem]) -> QtCore.QRectF:
         """
         Returns a QRectF with the combined size of the provided node items.
-
-        Args:
-            nodes (list[AbstractNodeItem]): list of node qgraphics items.
-
-        Returns:
-            QtCore.QRectF: combined rect
         """
         group: QtWidgets.QGraphicsItemGroup = self.scene().createItemGroup(nodes)
         rect: QtCore.QRectF = group.boundingRect()
@@ -325,17 +270,18 @@ class NodeViewer(QtWidgets.QGraphicsView):
             height (int): height area.
 
         Returns:
-            list: qgraphics items from the scene.
+            list: graphics items from the scene.
         """
         x, y = pos.x() - width, pos.y() - height
         rect = QtCore.QRectF(x, y, width, height)
-        items: list[QGraphicsItem] = []
+        items: list[QGraphicsItem] = list[QGraphicsItem]()
         excl: list[LivePipeItem | SlicerPipeItem] = [self._LIVE_PIPE, self._SLICER_PIPE]
         for item in self.scene().items(rect):
             if item in excl:
                 continue
             if not item_type or isinstance(item, item_type):
                 items.append(item)
+
         return items
 
     def _on_search_submitted(self: Self, node_type: str) -> None:
@@ -597,7 +543,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
                     self._cursor_text.setVisible(False)
                     self.start_live_connection(port)
 
-            # return here as the default behaviour unselects nodes with
+            # return here as the default behavior unselects nodes with
             # the shift modifier.
             return
 
@@ -748,8 +694,8 @@ class NodeViewer(QtWidgets.QGraphicsView):
                         if not pipe.input_port:
                             continue
                         port_node_check = all([
-                            not pipe.input_port.node is node,
-                            not pipe.output_port.node is node
+                            pipe.input_port.node is not node,
+                            pipe.output_port.node is not node
                         ])
                         if port_node_check:
                             pipe.setSelected(True)
@@ -1439,7 +1385,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
 
     def save_dialog(self: Self, current_dir=None, ext=None):
         """
-        Prompt node viewer file save dialog widget.
+        Prompt node viewer files save dialog widget.
 
         Args:
             current_dir (str): directory path starting point. (optional)
@@ -1466,7 +1412,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
 
     def all_pipes(self: Self) -> list[PipeItem]:
         """
-        Returns all pipe qgraphic items.
+        Returns all pipe graphic items.
 
         Returns:
             list[PipeItem]: instances of pipe items.
@@ -1477,7 +1423,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
 
     def all_nodes(self: Self) -> list[AbstractNodeItem]:
         """
-        Returns all node qgraphic items.
+        Returns all node graphic items.
 
         Returns:
             list[AbstractNodeItem]: instances of node items.
@@ -1487,7 +1433,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
 
     def selected_nodes(self: Self) -> list[AbstractNodeItem]:
         """
-        Returns selected node qgraphic items.
+        Returns selected node graphic items.
 
         Returns:
             list[AbstractNodeItem]: instances of node items.
@@ -1497,7 +1443,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
 
     def selected_pipes(self: Self) -> list[PipeItem]:
         """
-        Returns selected pipe qgraphic items.
+        Returns selected pipe graphic items.
 
         Returns:
             list[Pipe]: pipe items.
@@ -1611,54 +1557,22 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self.setSceneRect(self._scene_range)
 
     def get_pipe_layout(self: Self)-> PipeLayoutEnum | Any:
-        """
-        Returns the pipe layout mode.
-
-        Returns:
-            int: pipe layout mode.
-        """
         return self._pipe_layout
 
-    def set_pipe_layout(self: Self, layout) -> None:
-        """
-        Sets the pipe layout mode and redraw all pipe items in the scene.
-
-        Args:
-            layout (int): pipe layout mode. (see the constants module)
-        """
+    def set_pipe_layout(self: Self, layout: LayoutDirectionEnum) -> None:
         self._pipe_layout = layout
         for pipe in self.all_pipes():
             pipe.draw_path(pipe.input_port, pipe.output_port)
 
     def get_layout_direction(self: Self)-> LayoutDirectionEnum | Any:
-        """
-        Returns the layout direction set on the node graph viewer
-        used by the pipe items for drawing.
-
-        Returns:
-            int: graph layout mode.
-        """
         return self._layout_direction
 
-    def set_layout_direction(self: Self, direction) -> None:
-        """
-        Sets the node graph viewer layout direction for re-drawing
-        the pipe items.
-
-        Args:
-            direction (int): graph layout direction.
-        """
+    def set_layout_direction(self: Self, direction: LayoutDirectionEnum) -> None:
         self._layout_direction = direction
         for pipe_item in self.all_pipes():
             pipe_item.draw_path(pipe_item.input_port, pipe_item.output_port)
 
     def reset_zoom(self: Self, cent=None):
-        """
-        Reset the viewer zoom level.
-
-        Args:
-            cent (QtCore.QPoint): specified center.
-        """
         self._scene_range = QtCore.QRectF(0, 0,
                                           self.size().width(),
                                           self.size().height())
@@ -1667,23 +1581,11 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self._update_scene()
 
     def get_zoom(self: Self) -> float:
-        """
-        Returns the viewer zoom level.
-
-        Returns:
-            float: zoom level.
-        """
         transform: QtGui.QTransform = self.transform()
         cur_scale: tuple[float, float] = (transform.m11(), transform.m22())
         return float(x='{:0.2f}'.format(cur_scale[0] - 1.0))
 
     def set_zoom(self: Self, value=0.0) -> None:
-        """
-        Set the viewer zoom level.
-
-        Args:
-            value (float): zoom level
-        """
         if value == 0.0:
             self.reset_zoom()
             return
@@ -1705,67 +1607,28 @@ class NodeViewer(QtWidgets.QGraphicsView):
             self.reset_zoom(self._scene_range.center())
 
     def force_update(self: Self) -> None:
-        """
-        Redraw the current node graph scene.
-        """
         self._update_scene()
 
     def scene_rect(self: Self) -> list[float]:
-        """
-        Returns the scene rect size.
-
-        Returns:
-            list[float]: x, y, width, height
-        """
         return [self._scene_range.x(), self._scene_range.y(),
                 self._scene_range.width(), self._scene_range.height()]
 
     def set_scene_rect(self: Self, rect):
-        """
-        Sets the scene rect and redraws the scene.
-
-        Args:
-            rect (list[float]): x, y, width, height
-        """
         self._scene_range = QtCore.QRectF(*rect)
         self._update_scene()
 
     def scene_center(self: Self) -> list[float]:
-        """
-        Get the center x,y pos from the scene.
-
-        Returns:
-            list[float]: x, y position.
-        """
         cent = self._scene_range.center()
         return [cent.x(), cent.y()]
 
     def scene_cursor_pos(self: Self) -> QtCore.QPointF:
-        """
-        Returns the cursor last position mapped to the scene.
-
-        Returns:
-            QtCore.QPoint: cursor position.
-        """
         return self.mapToScene(self._previous_pos)
 
     def nodes_rect_center(self: Self, nodes) -> list[float]:
-        """
-        Get the center x,y pos from the specified nodes.
-
-        Args:
-            nodes (list[AbstractNodeItem]): list of node qgrphics items.
-
-        Returns:
-            list[float]: x, y position.
-        """
         cent = self._combined_rect(nodes).center()
         return [cent.x(), cent.y()]
 
     def clear_key_state(self: Self) -> None:
-        """
-        Resets the Ctrl, Shift, Alt modifiers key states.
-        """
         self.CTRL_state = False
         self.SHIFT_state = False
         self.ALT_state = False
@@ -1779,7 +1642,7 @@ class NodeViewer(QtWidgets.QGraphicsView):
             align: Literal["left", "center", "right"] = "left",
             size: int | None = None,
             spacing: int | None = None,
-    ):
+        ):
         self._text_overlay = text
         self._text_overlay_align = align
         self._text_overlay_size: int = size or 40
@@ -1788,17 +1651,4 @@ class NodeViewer(QtWidgets.QGraphicsView):
         self.force_update()
 
     def use_OpenGL(self: Self) -> None:
-        """
-        Use QOpenGLWidget as the viewer.
-        """
-        # use QOpenGLWidget instead of the deprecated QGLWidget to avoid
-        # problems with Wayland.
-
-        # TODO: Review this part and make sure we do not break anything
-        # import qtpy
-        # if qtpy.PYSIDE6:
-        #     from PySide6.QtOpenGLWidgets import QOpenGLWidget
-        # elif qtpy.PYQT6:
-        #     from PyQt6.QtOpenGLWidgets import QOpenGLWidget
-
         self.setViewport(QtWidgets.QOpenGLWidget())
